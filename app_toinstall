@@ -1,2 +1,11 @@
 sudo python -m pip install pymongo
 sudo pip install paho-mqtt
+
+Containers:
+
+RepoName DockerHub: toke/mosquitto
+https://github.com/toke/docker-mosquitto
+
+RepoName DockerHub: mongo
+https://hub.docker.com/_/mongo/
+
