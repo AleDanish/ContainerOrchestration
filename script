@@ -1,15 +1,4 @@
 # Script to configure a RaspberryPi from scratch
-
-#iface eth0 inet manual
-iface eth0 inet static
-    address 193.10.119.38
-    netmask 255.255.255.240
-    network 193.10.119.32
-    gateway 193.10.119.46
-    broadcast 193.10.119.47
-    dns-nameservers 8.8.8.8 8.8.9.9
-
-
 sudo apt-get update
 
 #install java
@@ -35,24 +24,7 @@ curl -sSL https://get.docker.com | sh
 sudo apt-get update
 
 #configure hotspot
-sudo apt-get -y install hostapd udhcpd isc-dhcp-server bridge-utils
-
-/etc/dhcp/dhcpd.conf:
-#option domain-name "example.org";
-#option domain-name-servers ns1.example.org, ns2.example.org;
-authoritative;
-subnet 10.0.2.0 netmask 255.255.255.0 {
-range 10.0.2.1 10.0.2.254;
-option broadcast-address 10.0.2.255;
-option routers 10.0.2.1;
-default-lease-time 600;
-max-lease-time 7200;
-option domain-name "local";
-option domain-name-servers 8.8.8.8, 8.8.4.4;
-}
-
-/etc/default/isc-dhcp-server:
-INTERFACES="wlan0"
+sudo apt-get -y install hostapd dnsmasq
 
 /etc/default/hostapd:
 DAEMON_CONF="/etc/hostapd/hostapd.conf"
@@ -86,26 +58,7 @@ sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -
 sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
 sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 
-/etc/network/interfaces:
-up iptables-restore < /etc/iptables.ipv4.nat
-
-/etc/init.d/hostapd restart
-
-/etc/network/interfaces:
-allow-hotplug wlan0
-iface wlan0 inet static
-address 10.0.2.1
-netmask 255.255.255.0
-auto eth0
-iface eth0 inet static
-    address 137.204.45.221
-    netmask 255.255.255.0
-    gateway 137.204.45.254
-    dns-nameservers 8.8.8.8 8.8.4.4
-pre-up iptables-restore < /etc/iptables.ipv4.nat
-
 reboot
-/etc/init.d/isc-dhcp-server restart
 /etc/init.d/hostapd restart
 
 
