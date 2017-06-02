@@ -1,26 +1,23 @@
 version: '3'
 services:
+  test-app:
+    image: test-app
+    deploy:
+      placement:
+        constraints: [node.hostname == alessandro-VirtualBox2]
+
   mongo:
-    image: "mongo:latest" 
+    image: mongo
     ports:
     - "127.0.0.1:27017:27017"
     deploy:
-      mode: global
-      placement:
-        constraints: [node.role == worker]
+       placement:
+        constraints: [node.hostname == alessandro-VirtualBox2]
 
   mosquitto:
-    image: "toke/mosquitto:latest"
+    image: toke/mosquitto
     ports:
     - "1883:1883"
     deploy:
-      mode: global
       placement:
-        constraints: [node.role == worker]
-
-  test-app:
-    image: "test-app:latest"
-    deploy:
-      mode: global
-      placement:
-        constraints: [node.role == worker]
+        constraints: [node.hostname == alessandro-VirtualBox2]
