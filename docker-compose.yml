@@ -1,10 +1,26 @@
 version: '3'
 services:
   mongo:
-    image: "mongo" 
+    image: "mongo:latest" 
     ports:
     - "127.0.0.1:27017:27017"
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == worker]
+
   mosquitto:
-    image: "toke/mosquitto"
+    image: "toke/mosquitto:latest"
     ports:
     - "1883:1883"
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == worker]
+
+  test-app:
+    image: "test-app:latest"
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == worker]
