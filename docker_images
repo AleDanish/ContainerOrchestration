@@ -1,6 +1,3 @@
-sudo python -m pip install pymongo
-sudo pip install paho-mqtt
-
 Containers:
 
 RepoName DockerHub: toke/mosquitto

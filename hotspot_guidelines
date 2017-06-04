@@ -1,31 +1,3 @@
-# Script to configure a RaspberryPi from scratch
-sudo apt-get update
-
-#install java
-sudo apt-get install oracle-java8-jdk
-
-sudo apt-get update
-
-#install mosquitto
-wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
-sudo apt-key add mosquitto-repo.gpg.key
-cd /etc/apt/sources.list.d/
-sudo wget http://repo.mosquitto.org/debian/mosquitto-jessie.list
-sudo apt-get update
-sudo apt-get -y install mosquitto
-
-sudo apt-get update
-
-#install Docker
-curl -sSL https://get.docker.com | sh
-#sudo service docker stop
-#sudo dockerd --storage-driver=overlay &
-
-sudo apt-get update
-
-#configure hotspot
-sudo apt-get -y install hostapd dnsmasq
-
 /etc/default/hostapd:
 DAEMON_CONF="/etc/hostapd/hostapd.conf"
 
