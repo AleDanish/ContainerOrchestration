@@ -2,22 +2,32 @@ version: '3'
 services:
   test-app:
     image: test-app
+    environment:
+    - HOSTNAME_TO_DEPLOY=${HOSTNAME_TO_DEPLOY}
     deploy:
+      replicas: 2
       placement:
-        constraints: [node.hostname == alessandro-VirtualBox2]
+        constraints:
+        - node.hostname == HOSTNAME_TO_DEPLOY
 
   mongo:
-    image: mongo
+    environment:
+      - IMAGE=${CONTAINER1}
+    image: IMAGE
     ports:
     - "127.0.0.1:27017:27017"
     deploy:
+       replicas: 2
        placement:
-        constraints: [node.hostname == alessandro-VirtualBox2]
+        constraints:
+        - node.hostname == ${HOSTNAME_TO_DEPLOY}
 
   mosquitto:
     image: toke/mosquitto
     ports:
     - "1883:1883"
     deploy:
+      replicas: 2
       placement:
-        constraints: [node.hostname == alessandro-VirtualBox2]
+        constraints:
+        - node.hostname == ${HOSTNAME_TO_DEPLOY}

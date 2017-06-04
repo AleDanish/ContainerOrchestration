@@ -7,6 +7,7 @@ sudo apt-get install python-pip
 sudo pip install pymongo
 sudo pip install paho-mqtt
 sudo pip install tornado
+sudo pip install docker
 
 sudo apt-get update
 
@@ -15,9 +16,16 @@ curl -sSL https://get.docker.com | sh
 #sudo service docker stop
 #sudo dockerd --storage-driver=overlay &
 
+# set docker to run with sudo-priviledges
+sudo groupadd dockerd
+sudo groupadd dockerd
+newgrp docker
+
 sudo apt-get update
 
 #configure hotspot
 sudo apt-get -y install hostapd dnsmasq
 
 sudo apt-get update
+
+
