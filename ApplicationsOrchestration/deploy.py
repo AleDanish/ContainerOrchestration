@@ -31,7 +31,7 @@ def edit_deploy_settings(hostname):
 def get_swarm_node_list():
     node_list=[]
     cmd="docker node ls | grep Ready | awk '{print $2}'"
-    proc = subprocess.Popen((cmd),shell=True, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline,''):
         line = line.decode("utf-8")
         if line == '' :
@@ -39,3 +39,8 @@ def get_swarm_node_list():
         elif line != '*\n':
             node_list.append(line.rstrip())
     return node_list
+
+def create_services(app_name):
+    cmd="docker stack deploy --with-registry-auth --compose-file=" + docker_compose_file + " " + app_name
+    subprocess.Popen(cmd, shell=True)
+
