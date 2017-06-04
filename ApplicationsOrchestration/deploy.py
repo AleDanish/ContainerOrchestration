@@ -24,7 +24,7 @@ def edit_deploy_settings(hostname):
                 service_name = service_name[:-len(service_number)]
             print(service_name + host_number + ":")
         elif "node.hostname" in line:
-            print(line.split("==")[0] + "==" + hostname)
+            print(line.split("==")[0] + "==" + hostname + "]")
         else:
             print(line)
 

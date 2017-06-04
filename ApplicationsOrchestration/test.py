@@ -14,16 +14,22 @@ def application_management(hostname_requesting):
         if hostname != hostname_requesting:
             hostname_receiver = hostname
             break
+    print("Modifying the docker compose settings file for deployment on " + hostname_receiver + "...")
     deploy.edit_deploy_settings(hostname_receiver)
+    print("Docker compose settings file modified for the hostname " + hostname_receiver)
+    print("Creating new services for the application " + APP_NAME + "on the hostname " +  hostname_receiver + "...")
     deploy.create_services(APP_NAME)
 
 class MainHandler(tornado.web.RequestHandler):
     def post(self):
         arguments = self.request.arguments
-        hostname_request = arguments["hostname"]
+        hostname_request = arguments["hostname"][0]
+        hostname_request = hostname_request.decode("utf-8")
+        print("Arrived request from the hostname " + hostname_request)
         application_management(hostname_request)
         
     def get(self):
+        print("Arrived request without arguments")
         application_management("")
         
 def make_app():
