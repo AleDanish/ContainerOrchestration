@@ -1,6 +1,5 @@
 import DBManager
 from MQTTClient import MQTTClient
-import time
 
 ip="127.0.0.1"
 port_mongo = "27017"

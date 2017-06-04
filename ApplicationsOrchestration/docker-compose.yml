@@ -1,0 +1,23 @@
+version: '3'
+services:
+  test-app:
+    image: test-app
+    deploy:
+      placement:
+        constraints: node.hostname ==alessandro-VirtualBox2
+
+  mongo:
+    image: mongo
+    ports:
+    - "127.0.0.1:27017:27017"
+    deploy:
+       placement:
+        constraints: node.hostname ==alessandro-VirtualBox2
+
+  mosquitto:
+    image: toke/mosquitto
+    ports:
+    - "1883:1883"
+    deploy:
+      placement:
+        constraints: node.hostname ==alessandro-VirtualBox2
