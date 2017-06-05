@@ -9,9 +9,10 @@ class MainHandler(tornado.web.RequestHandler):
         arguments = self.request.arguments
         token = arguments["token"][0].decode("utf-8")
         ip_master = arguments["ip_master"][0].decode("utf-8")
-        ip_port = arguments["port_master"][0].decode("utf-8")
-        print("Arrived request from the master with ip " + ip_master + ":" + ip_port + " with token " + token)
-        subprocess.Popen("docker swarm join --token " + token + " " + ip_master + ":" + ip_master)
+        port_master = arguments["port_master"][0].decode("utf-8")
+        print("Arrived request from the master with ip " + ip_master + ":" + port_master + " with token " + token)
+        cmd = "docker swarm join --token " + token + " " + ip_master + ":" + port_master
+        subprocess.Popen(cmd, shell=True)
         print("Node added to the cluster")
         
     def get(self):

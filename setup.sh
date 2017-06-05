@@ -18,7 +18,7 @@ curl -sSL https://get.docker.com | sh
 
 # set docker to run with sudo-priviledges
 sudo groupadd dockerd
-sudo groupadd dockerd
+sudo gpasswd -a $USER docker
 newgrp docker
 
 sudo apt-get update

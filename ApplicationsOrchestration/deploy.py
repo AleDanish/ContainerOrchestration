@@ -64,11 +64,18 @@ def get_token():
     cmd = "docker swarm join-token -q worker"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline,''):
-        return line.decode("utf-8")
-    
-def ip_from_hostname():
-    cmd = "docker node inspect mnip7hymkp6d9b7k099za7rs9 | grep Addr"
-    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        return line.decode("utf-8").replace("\n","")
+
+def ip_from_hostname(hostname):
+    host_id = None
+    cmd1 = "docker node ls | grep " + hostname + "| awk '{print $1}'"
+    proc = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline,''):
-        return line.decode("utf-8")
+        host_id = line.decode("utf-8").replace("\n","")
+        break
+    cmd2 = "docker node inspect " + host_id + " | grep Addr"
+    proc = subprocess.Popen(cmd2, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        line = line.decode("utf-8").replace("\n","").replace("\"","").split("Addr:")[1]
+        return line.strip()
     
