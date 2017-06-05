@@ -59,4 +59,16 @@ def get_swarm_node_list():
 def create_services(app_name):
     cmd="docker stack deploy --with-registry-auth --compose-file=" + docker_compose_file + " " + app_name
     subprocess.Popen(cmd, shell=True)
-
+    
+def get_token():
+    cmd = "docker swarm join-token -q worker"
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        return line.decode("utf-8")
+    
+def ip_from_hostname():
+    cmd = "docker node inspect mnip7hymkp6d9b7k099za7rs9 | grep Addr"
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        return line.decode("utf-8")
+    
