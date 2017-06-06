@@ -5,8 +5,8 @@ import swarm_management
 
 WEB_SERVER_PORT = 8888
 APP_NAME = "app"
-#DEPLOYMENT_TYPE = "SCALABILITY"
-DEPLOYMENT_TYPE = "MOBILE_PRESENCE"
+DEPLOYMENT_TYPE = "SCALABILITY"
+#DEPLOYMENT_TYPE = "MOBILE_PRESENCE"
 
 WEB_SERVER_PORT_FOG_NODES = "8888"
 THIS_IP = "192.168.56.101" 
@@ -23,12 +23,12 @@ def application_management(hostname_requesting):
             hostname_receiver = hostname
             break
     if hostname_receiver is not "":
-        if DEPLOYMENT_TYPE == "SCALABILTIY":
+        print(DEPLOYMENT_TYPE + " mode - Calling the node " + hostname_receiver + " to join the swarm ...")
+        swarm_management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
+        if DEPLOYMENT_TYPE == "SCALABILITY":
             print(DEPLOYMENT_TYPE + " mode - Creating new services for the application " + APP_NAME + " on the hostname " +  hostname_receiver + "...")
             swarm_management.create_services(APP_NAME)
         elif DEPLOYMENT_TYPE == "MOBILE_PRESENCE":
-            print(DEPLOYMENT_TYPE + " mode - Calling the node " + hostname_receiver + " to join the swarm ...")
-            swarm_management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
             print(DEPLOYMENT_TYPE + " mode - Modifying the docker compose settings file for deployment on " + hostname_receiver + "...")
             deploy.edit_deploy_settings_hostname(hostname_receiver)
             print(DEPLOYMENT_TYPE + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
@@ -69,7 +69,7 @@ def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
 if __name__ == "__main__":
-    initial_deploy()
+    #initial_deploy()
     app = make_app()
     app.listen(WEB_SERVER_PORT)
     print("WebServer listening on port " + str(WEB_SERVER_PORT))

@@ -5,15 +5,15 @@ services:
     ports:
     - "127.0.0.1:27017:27017"
     deploy:
-       mode: replicated
+       mode: global
        placement:
-         constraints: [node.hostname==alessandro-VirtualBox3]
+         constraints: [node.role == worker]
 
   mosquitto:
     image: toke/mosquitto
     ports:
     - "1883:1883"
     deploy:
-      mode: replicated
+      mode: global
       placement:
-        constraints: [node.hostname==alessandro-VirtualBox3]
+        constraints: [node.role == worker]
