@@ -2,6 +2,7 @@ import tornado.ioloop
 import tornado.web
 import deploy
 import subprocess
+import swarm_management
 
 WEB_SERVER_PORT = 8888
 APP_NAME = "app"
@@ -17,7 +18,7 @@ MASTER_PORT = "2377"
 
 # get an hostname (!= from the node is requesting) from the available node into the swarm and deploy the same service on it
 def application_management(hostname_requesting):
-    hostname_list = deploy.get_swarm_node_list()
+    hostname_list = swarm_management.get_swarm_node_list()
     hostname_receiver = ""
     for hostname in hostname_list:
         if hostname != hostname_requesting:
@@ -26,15 +27,20 @@ def application_management(hostname_requesting):
     
     #deploy on the new node -> call the new node to join the swarm
     print(DEPLOYMENT_TYPE + " mode - Calling the node " + hostname_receiver + " to join the swarm ...")
-    token = deploy.get_token()
+    token = swarm_management.get_token()
     print(DEPLOYMENT_TYPE + " mode - Token=" + token)
-    node_ip = deploy.ip_from_hostname(hostname_receiver)
+    node_id = swarm_management.id_from_hostname(hostname_receiver)
+    print(DEPLOYMENT_TYPE + " mode - ID=" + node_id)
+    node_ip = swarm_management.ip_from_id(node_id)
     print(DEPLOYMENT_TYPE + " mode - IP=" + node_ip)
-    subprocess.call(['curl', 'http://', node_ip + ':' + WEB_SERVER_PORT_FOG_NODES, '-d', 'token=' + token, '-d', 'ip_master=' + THIS_IP, '-d', 'port_master=' + MASTER_PORT])
-    print(DEPLOYMENT_TYPE + " mode - Request sent to " + hostname)
-    
+    cmd = ['curl', 'http://' + node_ip + ':' + WEB_SERVER_PORT_FOG_NODES, '-d', 'token=' + token, '-d', 'ip_master=' + THIS_IP, '-d', 'port_master=' + MASTER_PORT]
+    subprocess.call(cmd, stdout=subprocess.PIPE)
+    print(DEPLOYMENT_TYPE + " mode - Request sent to " + hostname_receiver)
+    swarm_management.remove_node_from_id(node_id) #swarm will create a new id for the host -> the id found is no longer used
+    print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
+
 def initial_deploy():
-    hostname_list = deploy.get_swarm_node_list()
+    hostname_list = swarm_management.get_swarm_node_list()
     hostname_receiver = hostname_list[0]
     if DEPLOYMENT_TYPE == "SCALABILITY":
         print(DEPLOYMENT_TYPE + " mode - Modifying the docker compose settings file for deployment on " + hostname_receiver + "...")
@@ -46,7 +52,7 @@ def initial_deploy():
         print(DEPLOYMENT_TYPE + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
     
     print(DEPLOYMENT_TYPE + " mode - Creating new services for the application " + APP_NAME + " on the hostname " +  hostname_receiver + "...")
-    deploy.create_services(APP_NAME)
+    swarm_management.create_services(APP_NAME)
 
 class MainHandler(tornado.web.RequestHandler):
     def post(self):
@@ -55,7 +61,7 @@ class MainHandler(tornado.web.RequestHandler):
         hostname_request = hostname_request.decode("utf-8")
         print("Arrived request from the hostname " + hostname_request)
         application_management(hostname_request)
-        
+
     def get(self):
         print("Arrived request without arguments")
         application_management("")
@@ -64,7 +70,7 @@ def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
 if __name__ == "__main__":
-   # initial_deploy()
+    #initial_deploy()
     app = make_app()
     app.listen(WEB_SERVER_PORT)
     print("WebServer listening on port " + str(WEB_SERVER_PORT))
