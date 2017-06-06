@@ -13,10 +13,16 @@ class MainHandler(tornado.web.RequestHandler):
         print("Arrived request from the master with ip " + ip_master + ":" + port_master + " with token " + token)
         #remove node from swarm to update its status (after the rm --force from the master)
         cmd1 = "docker swarm leave"
-        subprocess.Popen(cmd1, shell=True)
+        proc1 = subprocess.Popen(cmd1, shell=True, stdout=subprocess.PIPE)
+        for line in iter(proc1.stdout.readline,''):
+            print(line.decode("utf-8"))
+            break
         #join the swarm
         cmd2 = "docker swarm join --token " + token + " " + ip_master + ":" + port_master
-        subprocess.Popen(cmd2, shell=True)
+        proc2 = subprocess.Popen(cmd2, shell=True, stdout=subprocess.PIPE)
+        for line in iter(proc2.stdout.readline,''):
+            print(line.decode("utf-8"))
+            break
         print("Node added to the cluster")
         
     def get(self):
