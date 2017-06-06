@@ -36,8 +36,6 @@ def application_management(hostname_requesting):
     cmd = ['curl', 'http://' + node_ip + ':' + WEB_SERVER_PORT_FOG_NODES, '-d', 'token=' + token, '-d', 'ip_master=' + THIS_IP, '-d', 'port_master=' + MASTER_PORT]
     subprocess.call(cmd, stdout=subprocess.PIPE)
     print(DEPLOYMENT_TYPE + " mode - Request sent to node " + hostname_receiver)
-    swarm_management.remove_node_from_id(node_id) #swarm will create a new id for the host -> the id found is no longer used
-    print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
 
     #in mobile presence scenario I need to re-deploy the app to update the containers locations    
     if DEPLOYMENT_TYPE == "MOBILE_PRESENCE":
@@ -46,6 +44,9 @@ def application_management(hostname_requesting):
         print(DEPLOYMENT_TYPE + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
         print(DEPLOYMENT_TYPE + " mode - Creating new services for the application " + APP_NAME + " on the hostname " +  hostname_receiver + "...")
         swarm_management.create_services(APP_NAME)
+    
+    swarm_management.remove_node_from_id(node_id) #swarm will create a new id for the host -> the id found is no longer used
+    print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
 
 def initial_deploy():
     hostname_list = swarm_management.get_swarm_node_list("Ready")
@@ -78,7 +79,7 @@ def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
 if __name__ == "__main__":
-    #initial_deploy()
+    initial_deploy()
     app = make_app()
     app.listen(WEB_SERVER_PORT)
     print("WebServer listening on port " + str(WEB_SERVER_PORT))
