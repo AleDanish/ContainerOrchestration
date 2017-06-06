@@ -7,7 +7,7 @@ services:
     deploy:
        mode: replicated
        placement:
-         constraints: [node.hostname==alessandro-VirtualBox3]
+         constraints: [node.role==worker]
 
   mosquitto:
     image: toke/mosquitto
@@ -16,4 +16,4 @@ services:
     deploy:
       mode: replicated
       placement:
-        constraints: [node.hostname==alessandro-VirtualBox3]
+         constraints: [node.role==worker]
