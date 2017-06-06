@@ -19,7 +19,9 @@ def create_services(app_name):
     cmd="docker stack deploy --with-registry-auth --compose-file=" + docker_compose_file + " " + app_name
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline,''):
-        if line.decode("utf-8") is "":
+        line = line.decode("utf-8").replace("\n","")
+        print(line)
+        if line is "":
             break
     
 def get_token():
@@ -43,4 +45,8 @@ def ip_from_id(host_id):
     
 def remove_node_from_id(host_id, option):
     cmd = "docker node rm " + option + " " + host_id
+    subprocess.Popen(cmd, shell=True)
+    
+def set_availability_node(host_id, availability_type):
+    cmd = "docker node update --availability " + availability_type + " " + host_id
     subprocess.Popen(cmd, shell=True)

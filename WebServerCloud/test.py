@@ -1,7 +1,6 @@
 import tornado.ioloop
 import tornado.web
 import deploy
-import subprocess
 import swarm_management
 
 WEB_SERVER_PORT = 8888
@@ -17,40 +16,28 @@ MASTER_PORT = "2377"
 
 # get an hostname (!= from the node is requesting) from the available node into the swarm and deploy the same service on it
 def application_management(hostname_requesting):
-    hostname_list = swarm_management.get_swarm_node_list("Down")
+    hostname_list = swarm_management.get_swarm_node_list("Drain")
     hostname_receiver = ""
     for hostname in hostname_list:
         if hostname != hostname_requesting:
             hostname_receiver = hostname
             break
-    
-    #deploy on the new node -> call the new node to join the swarm    
-    print(DEPLOYMENT_TYPE + " mode - Calling the node " + hostname_receiver + " to join the swarm ...")
-    token = swarm_management.get_token()
-    print(DEPLOYMENT_TYPE + " mode - Token=" + token)
-    node_id = swarm_management.id_from_hostname(hostname_receiver)
-    print(DEPLOYMENT_TYPE + " mode - ID=" + node_id)
-    node_ip = swarm_management.ip_from_id(node_id)
-    print(DEPLOYMENT_TYPE + " mode - IP=" + node_ip)
-    cmd = ['curl', 'http://' + node_ip + ':' + WEB_SERVER_PORT_FOG_NODES, '-d', 'token=' + token, '-d', 'ip_master=' + THIS_IP, '-d', 'port_master=' + MASTER_PORT]
-    subprocess.call(cmd, stdout=subprocess.PIPE)
-    print(DEPLOYMENT_TYPE + " mode - Request sent to node " + hostname_receiver)
-
-    #in mobile presence scenario I need to re-deploy the app to update the containers locations    
-    if DEPLOYMENT_TYPE == "MOBILE_PRESENCE":
-        print(DEPLOYMENT_TYPE + " mode - Modifying the docker compose settings file for deployment on " + hostname_receiver + "...")
-        deploy.edit_deploy_settings_hostname(hostname_receiver)
-        print(DEPLOYMENT_TYPE + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
-        print(DEPLOYMENT_TYPE + " mode - Creating new services for the application " + APP_NAME + " on the hostname " +  hostname_receiver + "...")
-        swarm_management.create_services(APP_NAME)
-        node_id_requesting = swarm_management.id_from_hostname(hostname_requesting)
-        swarm_management.remove_node_from_id(node_id_requesting, "--force") #swarm will create a new id for the host -> the id found is no longer used
-        print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
+    if hostname_receiver is not "":
+        if DEPLOYMENT_TYPE == "SCALABILTIY":
+            print(DEPLOYMENT_TYPE + " mode - Creating new services for the application " + APP_NAME + " on the hostname " +  hostname_receiver + "...")
+            swarm_management.create_services(APP_NAME)
+        elif DEPLOYMENT_TYPE == "MOBILE_PRESENCE":
+            print(DEPLOYMENT_TYPE + " mode - Calling the node " + hostname_receiver + " to join the swarm ...")
+            swarm_management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
+            print(DEPLOYMENT_TYPE + " mode - Modifying the docker compose settings file for deployment on " + hostname_receiver + "...")
+            deploy.edit_deploy_settings_hostname(hostname_receiver)
+            print(DEPLOYMENT_TYPE + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
+            print(DEPLOYMENT_TYPE + " mode - Creating new services for the application " + APP_NAME + " on the hostname " +  hostname_receiver + "...")
+            swarm_management.create_services(APP_NAME)
+            node_id_requesting = swarm_management.id_from_hostname(hostname_requesting)
+            swarm_management.set_availability_node(node_id_requesting, "drain") #swarm will create a new id for the host -> the id found is no longer used
+            print(DEPLOYMENT_TYPE + " mode - Drain node with ip " + node_id_requesting)
         
-        # delete Down id node
-        swarm_management.remove_node_from_id(node_id, "") #swarm will create a new id for the host -> the id found is no longer used
-        print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
-
 def initial_deploy():
     hostname_list = swarm_management.get_swarm_node_list("Ready")
     hostname_receiver = hostname_list[0]
