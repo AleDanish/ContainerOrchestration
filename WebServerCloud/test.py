@@ -9,7 +9,6 @@ APP_NAME = "app"
 #DEPLOYMENT_TYPE = "SCALABILITY"
 DEPLOYMENT_TYPE = "MOBILE_PRESENCE"
 
-#FOG NODES
 WEB_SERVER_PORT_FOG_NODES = "8888"
 THIS_IP = "192.168.56.101" 
 MASTER_PORT = "2377"
@@ -44,9 +43,13 @@ def application_management(hostname_requesting):
         print(DEPLOYMENT_TYPE + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
         print(DEPLOYMENT_TYPE + " mode - Creating new services for the application " + APP_NAME + " on the hostname " +  hostname_receiver + "...")
         swarm_management.create_services(APP_NAME)
-    
-    swarm_management.remove_node_from_id(node_id) #swarm will create a new id for the host -> the id found is no longer used
-    print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
+        node_id_requesting = swarm_management.id_from_hostname(hostname_requesting)
+        swarm_management.remove_node_from_id(node_id_requesting, "--force") #swarm will create a new id for the host -> the id found is no longer used
+        print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
+        
+        # delete Down id node
+        swarm_management.remove_node_from_id(node_id, "") #swarm will create a new id for the host -> the id found is no longer used
+        print(DEPLOYMENT_TYPE + " mode - Cleaned docker node list inside the swarm")
 
 def initial_deploy():
     hostname_list = swarm_management.get_swarm_node_list("Ready")

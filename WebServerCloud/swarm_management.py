@@ -17,7 +17,10 @@ def get_swarm_node_list(status):
 
 def create_services(app_name):
     cmd="docker stack deploy --with-registry-auth --compose-file=" + docker_compose_file + " " + app_name
-    subprocess.Popen(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        if line.decode("utf-8") is "":
+            break
     
 def get_token():
     cmd = "docker swarm join-token -q worker"
@@ -38,6 +41,6 @@ def ip_from_id(host_id):
         line = line.decode("utf-8").replace("\n","").replace("\"","").split("Addr:")[1]
         return line.strip()
     
-def remove_node_from_id(host_id):
-    cmd = "docker node rm --force " + host_id
+def remove_node_from_id(host_id, option):
+    cmd = "docker node rm " + option + " " + host_id
     subprocess.Popen(cmd, shell=True)
