@@ -1,10 +1,19 @@
 import DBManager
 from MQTTClient import MQTTClient
+import socket
 
-ip="127.0.0.1"
+def get_ip_address():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
+
+#ip = get_ip_address()
+ip="172.17.0.1"
 port_mongo = "27017"
 db = "testDB"
 collection = "user"
+
+print("IP: " + ip)
 
 print("Testing Mosquitto...")
 client = MQTTClient(ip, "client1")

@@ -1,4 +1,4 @@
-FROM hypriot/rpi-python
+FROM python:3
 
 MAINTAINER Alessandro Zanni
 
