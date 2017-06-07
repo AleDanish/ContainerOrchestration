@@ -69,7 +69,7 @@ def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
 if __name__ == "__main__":
-    #initial_deploy()
+    initial_deploy()
     app = make_app()
     app.listen(WEB_SERVER_PORT)
     print("WebServer listening on port " + str(WEB_SERVER_PORT))
