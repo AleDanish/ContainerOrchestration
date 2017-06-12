@@ -1,15 +1,14 @@
 # Script to configure a RaspberryPi from scratch
 sudo apt-get update
 
-#install java
-sudo apt-get install python python3
-sudo apt-get install python-pip
-sudo pip install pymongo
-sudo pip install paho-mqtt
-sudo pip install tornado
-sudo pip install docker
+#sudo apt-get install python python3
+#sudo apt-get install python-pip
+#sudo pip install pymongo
+#sudo pip install paho-mqtt
+#sudo pip install tornado
+#sudo pip install docker
 
-sudo apt-get update
+#sudo apt-get update
 
 #install Docker
 curl -sSL https://get.docker.com | sh
@@ -28,4 +27,9 @@ sudo apt-get -y install hostapd dnsmasq
 
 sudo apt-get update
 
+#change with unique hostname
+sudo nano /etc/hosts
+sudo nano /etc/hostname
+sudo /etc/init.d/hostname.sh
+sudo reboot
 
