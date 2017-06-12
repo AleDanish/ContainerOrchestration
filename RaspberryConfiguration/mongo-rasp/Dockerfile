@@ -4,19 +4,10 @@ MAINTAINER Alessandro Zanni
 
 # Install MongoDB.
 RUN apt-get update && \
-    apt-get install -y mongodb
+    apt-get install -y mongodb-server
   
-# Define mountable directories.
-VOLUME ["/data/db"]
+RUN mkdir -p /data/db
 
-# Define working directory.
-WORKDIR /data
-
-# Expose ports.
-#   - 27017: process
-#   - 28017: http
 EXPOSE 27017
-EXPOSE 28017
 
-# Define default command.
-CMD ["mongod"]
+ENTRYPOINT usr/bin/mongod
