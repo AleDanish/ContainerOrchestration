@@ -24,7 +24,7 @@ def edit_deploy_settings_mode(mode):
         line = line.replace("\n","")
         if " mode:" in line:
             line.split("mode:")[0]
-            print(line.split("mode:")[0] + "mode:", mode)
+            print(line.split("mode:")[0] + "mode: " + mode)
         elif " constraints:" in line:
             print(line.split("constraints:")[0] + "constraints: [node.role == worker]")
         else:
