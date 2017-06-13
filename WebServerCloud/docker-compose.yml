@@ -1,7 +1,7 @@
 version: '3'
 services:
   mongo:
-    image: mongo
+    image: alez/mongo-raspi:3
     ports:
     - "27017:27017"
     deploy:
@@ -12,7 +12,7 @@ services:
          constraints: [node.role == worker]
 
   mosquitto:
-    image: toke/mosquitto
+    image: alez/mosquitto-raspi
     ports:
     - "1883:1883"
     deploy:
@@ -23,10 +23,12 @@ services:
         constraints: [node.role == worker]
 
   test-app:
-    image: alez/test-app
+    image: alez/test-app-raspi:3
     deploy:
       mode: global
       restart_policy:
-         condition: none
+         condition: on-failure
+         delay: 20s
+         max_attempts: 3
       placement:
         constraints: [node.role == worker]
