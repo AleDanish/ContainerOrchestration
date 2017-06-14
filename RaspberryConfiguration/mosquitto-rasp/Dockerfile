@@ -1,6 +1,9 @@
-FROM resin/armv7hf-debian:jessie
+#FROM resin/armv7hf-debian:jessie
+FROM alez/raspberry3-qemu
 
-MAINTAINER Alessandro Zanni
+MAINTAINER Alessandro Zanni <alessandro.zanni3@unibo.it>
+
+RUN [ "cross-build-start" ]
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
@@ -30,6 +33,8 @@ VOLUME ["/mqtt/config", "/mqtt/data", "/mqtt/log"]
 EXPOSE 1883 9001
 
 ADD docker-entrypoint.sh /usr/bin/
+
+RUN [ "cross-build-end" ]
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/usr/sbin/mosquitto", "-c", "/mqtt/config/mosquitto.conf"]
