@@ -5,8 +5,8 @@ services:
     ports:
     - "27017:27017"
     deploy:
-       mode: replicated
-       replicas: 2
+       mode: global
+#       replicas: 2
        restart_policy:
          condition: none
        placement:
@@ -17,8 +17,8 @@ services:
     ports:
     - "1883:1883"
     deploy:
-      mode: replicated
-      replicas: 2
+      mode: global
+#      replicas: 2
       restart_policy:
          condition: none
       placement:
@@ -27,8 +27,8 @@ services:
   test-app:
     image: alez/test-app-raspi:3
     deploy:
-      mode: replicated
-      replicas: 2
+      mode: global
+#      replicas: 2
       restart_policy:
          condition: on-failure
          delay: 20s
