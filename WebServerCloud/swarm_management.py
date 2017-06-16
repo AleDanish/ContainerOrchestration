@@ -5,7 +5,7 @@ docker_compose_file = "docker-compose.yml"
 
 def get_swarm_node_list(status):
     node_list=[]
-    cmd="docker node ls | grep " + status + " | awk '{print $2}'" #consider only the node outside the swarm
+    cmd="docker node ls | grep " + status + " | awk '{print $2}'"
     #cmd="docker node ls | awk '{print $2}'"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline,''):
@@ -33,7 +33,10 @@ def get_node_labels(node):
 """ Remove label from a given node"""
 def remove_label_from_node(node, label_key):
     cmd = "docker node update --label-rm " + label_key + " " + node
-    subprocess.Popen(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        print(line)
+        break
     
 """ Remove all labels from a given node"""
 def delete_labels_from_node(node):
@@ -44,7 +47,10 @@ def delete_labels_from_node(node):
 """ Add label from a given node"""
 def add_label_to_node(node, label_key, label_value):
     cmd = "docker node update --label-add " + label_key + "=" + label_value +  " " + node
-    subprocess.Popen(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        print(line)
+        break
 
 def create_services(app_name):
     cmd="docker stack deploy --with-registry-auth --compose-file=" + docker_compose_file + " " + app_name
@@ -76,8 +82,14 @@ def ip_from_id(host_id):
     
 def remove_node_from_id(host_id, option):
     cmd = "docker node rm " + option + " " + host_id
-    subprocess.Popen(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        print(line)
+        break
     
 def set_availability_node(host_id, availability_type):
     cmd = "docker node update --availability " + availability_type + " " + host_id
-    subprocess.Popen(cmd, shell=True)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        print(line)
+        break

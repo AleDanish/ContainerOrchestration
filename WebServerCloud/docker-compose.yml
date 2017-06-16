@@ -1,24 +1,24 @@
 version: '3'
 services:
   mongo:
-    image: alez/mongo-raspi:3
+    image: alez/mongo-raspi@sha256:3d4bb588d0febbac0e78fad3a2f7775173f8e516171e59cbcf692feabd837ce6
     ports:
     - "27017:27017"
     deploy:
-       mode: global
-#       replicas: 2
+       mode: replicated
+       replicas: 1
        restart_policy:
          condition: none
        placement:
          constraints: [node.labels.alessandro-VirtualBox2==true]
 
   mosquitto:
-    image: alez/mosquitto-raspi
+    image: alez/mosquitto-raspi@sha256:74cf253803b484a12b8db2a1744f51f2768eeae68da4c363613d91946495497d
     ports:
     - "1883:1883"
     deploy:
-      mode: global
-#      replicas: 2
+      mode: replicated
+      replicas: 1
       restart_policy:
          condition: none
       placement:
@@ -27,8 +27,8 @@ services:
   test-app:
     image: alez/test-app-raspi:3
     deploy:
-      mode: global
-#      replicas: 2
+      mode: replicated
+      replicas: 1
       restart_policy:
          condition: on-failure
          delay: 20s
