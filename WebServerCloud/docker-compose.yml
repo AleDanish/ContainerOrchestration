@@ -5,30 +5,33 @@ services:
     ports:
     - "27017:27017"
     deploy:
-       mode: global
+       mode: replicated
+       replicas: 2
        restart_policy:
          condition: none
        placement:
-         constraints: [node.role == worker]
+         constraints: [node.labels.alessandro-VirtualBox2==true]
 
   mosquitto:
     image: alez/mosquitto-raspi
     ports:
     - "1883:1883"
     deploy:
-      mode: global
+      mode: replicated
+      replicas: 2
       restart_policy:
          condition: none
       placement:
-        constraints: [node.role == worker]
+        constraints: [node.labels.alessandro-VirtualBox2==true]
 
   test-app:
     image: alez/test-app-raspi:3
     deploy:
-      mode: global
+      mode: replicated
+      replicas: 2
       restart_policy:
          condition: on-failure
          delay: 20s
          max_attempts: 3
       placement:
-        constraints: [node.role == worker]
+        constraints: [node.labels.alessandro-VirtualBox2==true]
