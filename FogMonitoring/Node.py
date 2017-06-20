@@ -12,7 +12,7 @@ class Node:
     general Node class
     '''
     
-    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.defMonFunc, weight=1, threshold=Config.threshold,balancing=Config.balancing):
+    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.defMonFunc, weight=1, threshold=Config.THRESHOLD,balancing=Config.balancing):
         '''
         Constructor
         args:
