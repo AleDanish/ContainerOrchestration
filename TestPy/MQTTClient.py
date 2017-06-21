@@ -19,7 +19,7 @@ class MQTTClient:
     
     def on_message(self, client, userdata, message):
         msg = str(message.payload.decode("utf-8"))
-        topic = message.topic.decode("utf-8")
+        topic = message.topic
         print("Message received  "+msg + " on topic " + topic)
         self.messages.append(topic+":"+msg)
     
