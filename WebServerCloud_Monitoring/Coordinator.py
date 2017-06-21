@@ -10,7 +10,7 @@ class Coordinator(Node):
     def __init__(self, nodes, 
                  nid="Coord", 
                  threshold=Config.threshold, 
-                 monitoringFunction=Config.defMonFunc):
+                 monitoringFunction=None):
         '''
         Constructor
         args:
@@ -54,6 +54,9 @@ class Coordinator(Node):
                 self.balancingSet.clear()
                 #self.newEst()
         return self.e
+    
+    def setMonitoringFunction(self, function):
+        self.monitoringFunction=function
     
     def setNodes(self, nodes):
         self.nodes=nodes
@@ -115,7 +118,7 @@ class Coordinator(Node):
             @override
             balance method based on original paper
         '''
-        self.balancingSet.add((sender,)+dat)    
+        self.balancingSet.add((sender,)+dat)
         
         b=sum(u*self.nodes[i] for i,v,u in self.balancingSet)/sum(self.nodes[i] for i,v,u in self.balancingSet)
         
