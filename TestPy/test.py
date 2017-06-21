@@ -15,7 +15,8 @@ def get_ip_address_from_interface(ifname):
     return socket.inet_ntoa(fcntl.ioctl(s.fileno(),0x8915,struct.pack('256s', ifname[:15]))[20:24])
 
 #ip = get_ip_adress()
-ip=get_ip_address_from_interface("docker0")
+#ip=get_ip_address_from_interface("docker0")
+ip = "172.17.0.1"
 #ip="127.0.0.1"
 port_mongo = "27017"
 db = "test"
@@ -31,6 +32,7 @@ client.subscribe(TOPIC)
 print("Subscribed to topic " + TOPIC)
 print("MQTT broker listening on port 1883")
 #client.publish("test/data1", "MESSAGE")
+client.log()
 
 count=0
 while True:
