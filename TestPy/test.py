@@ -21,6 +21,7 @@ ip = "172.17.0.1"
 port_mongo = "27017"
 db = "test"
 collection = "user"
+LOG_FILE = "log.txt"
 
 TOPIC="/test/fogorchestration"
 TIMEFRAME = 10
@@ -33,6 +34,9 @@ print("Subscribed to topic " + TOPIC)
 print("MQTT broker listening on port 1883")
 #client.publish("test/data1", "MESSAGE")
 client.log()
+with open(LOG_FILE, "w") as file:  # @ReservedAssignment
+    file.write("Subscribed to topic " + TOPIC + "\n")
+    file.write("MQTT broker listening on port 1883 \n")
 
 count=0
 while True:
@@ -50,12 +54,17 @@ while True:
             count+=1
         DBManager.insert_data(clientDB, db, collection, data)
         print("Inserted data into the db "+ db + " collection " + collection)
-        
+        with open(LOG_FILE, "a+") as file:  # @ReservedAssignment
+            file.write("Inserted data into the db "+ db + " collection " + collection+ "\n")
+
         cursor = DBManager.read_document(clientDB, db, collection, {})
         for doc in cursor:
             print("I'm reading from datatabase " + db + " collection " + collection)
             print(doc)
-        
+            with open(LOG_FILE, "a+") as file:  # @ReservedAssignment
+                file.write("I'm reading from datatabase " + db + " collection " + collection+ "\n")
+                file.write(str(doc))
+                file.write("\n")
     time.sleep(TIMEFRAME)
 
 #client.disconnect()
