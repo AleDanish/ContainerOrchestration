@@ -15,7 +15,7 @@ class MQTTClient:
 
     def on_connect(self, client, userdata, flags, rc):
         m="Connected flags"+str(flags)+"; result code "+str(rc)+"; client_id  "+str(client)
-        print(m)
+        #print(m)
     
     def on_message(self, client, userdata, message):
         msg = str(message.payload.decode("utf-8"))
