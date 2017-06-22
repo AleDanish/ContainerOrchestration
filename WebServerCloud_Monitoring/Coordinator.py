@@ -9,8 +9,8 @@ class Coordinator(Node):
 
     def __init__(self, nodes, 
                  nid="Coord", 
-                 threshold=Config.threshold, 
-                 monitoringFunction=None):
+                 threshold=Config.THRESHOLD_DEFAULT, 
+                 monitoringFunction=Config.MONITORING_FUNCTION):
         '''
         Constructor
         args:
@@ -47,9 +47,9 @@ class Coordinator(Node):
         '''
         if sender:
             #self.balancingSet.add(sender)
-            w=dec(dat[1])
-            v=dec(dat[0])
-            self.e+=(w*v)/self.sumW
+            V=dat[0]
+            w=dat[1]
+            self.e+=(w*V)/self.sumW
             if len(self.balancingSet)==len(self.nodes):
                 self.balancingSet.clear()
                 #self.newEst()

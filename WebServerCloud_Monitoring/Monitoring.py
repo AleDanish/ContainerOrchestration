@@ -1,8 +1,8 @@
 import subprocess
 from Utils import dec,deDec
-from sklearn import linear_model
 import numpy as np
 import scipy.optimize
+from io import StringIO   # StringIO behaves like a file object
 
 def get_swarm_node_list(status):
     node_list=[]
@@ -45,7 +45,7 @@ def least_squares_residuals(coeff, data, target):
     return vector_of_residuals
 
 def calculateCoefficientFunction(file):
-    data = np.loadtxt(file)
+    data = np.loadtxt(StringIO(file))
     input_data = np.array([data[:,(0)], data[:,(1)],np.ones([20])]).T
     target = data[:,(2)]
     num_coeff = 3
@@ -55,7 +55,7 @@ def calculateCoefficientFunction(file):
     # Test what the squared error of the returned result is
     coeff = lst_sqrs_result.x
     lst_sqrs_output = our_function(coeff, data)
-    print("Calculated Coefficients: A="+coeff[0]+" B="+coeff[1]+" C="+coeff[2])
+    print("Calculated Coefficients: A="+str(coeff[0])+" B="+str(coeff[1])+" C="+str(coeff[2]))
     print('Function output: lst_sqrs_output = %r' % (lst_sqrs_output,))
     return coeff, data
 
@@ -64,11 +64,16 @@ def initialization_monitoring(coordinator, hostname_request, nodes,file):
     monitoringFunction=lambda coeff, data: coeff[0]*data[0]+coeff[1]*data[1]+coeff[2]*data[2]
     coordinator.setMonitoringFunction(monitoringFunction)
     nodes[hostname_request]=1
-    coordinator.setNodes(nodes)
-    dat = [0,1] #v=0, w=1
-    e = coordinator.init(dat,hostname_request)
-    estimation = {'e' : float(e)}
-    return estimation
+    coordinator.e = 0
+    coordinator.setNodes(nodes)    
+    x_mean = np.mean(data[:,(0)])
+    y_mean = np.mean(data[:,(1)])
+    z_mean = np.mean(data[:,(2)])
+    V = np.array([x_mean, y_mean, z_mean])
+    w = 1
+    dat = [V,w] #v=0, w=1
+    estimation = coordinator.init(dat,hostname_request)
+    return coeff, estimation
 
 def application_monitoring(coordinator, hostname_request, arguments, nodes):
     for node in get_node_labels(hostname_request):
