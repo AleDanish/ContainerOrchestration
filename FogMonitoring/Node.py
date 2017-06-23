@@ -1,18 +1,12 @@
-'''
-@author: ak
-'''
 import uuid
-
 import Config
-from Utils import dec, deDec
-
 
 class Node:
     '''
     general Node class
     '''
     
-    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.defMonFunc, weight=1, threshold=Config.THRESHOLD,balancing=Config.balancing):
+    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.monitoringFunction, weight=1, threshold=Config.THRESHOLD_DEFAULT,balancing=Config.balancing):
         '''
         Constructor
         args:
@@ -25,13 +19,11 @@ class Node:
         self.u=0
         self.delta=0
         self.e=0
+        self.coeff=0
         
         self.id=nid
         self.weight=weight
-        
-        #convert to decimals
-        self.weight=dec(self.weight)
-        self.threshold=dec(threshold)
+        self.threshold=threshold
         self.monitoringFunction=monitoringFunction
         self.balancing=balancing
     
@@ -47,23 +39,23 @@ class Node:
     '''
     -------------node execution
     '''
-    def check(self):
-        '''
-        performs threshold check of drift vector's function value: f(u)
-        '''
+    #def check(self):
+    #    '''
+    #    performs threshold check of drift vector's function value: f(u)
+    #    '''
         
         #DBG
-        print('--Node %s reporting u: %f'%(self.id,self.u))
+    #    print('--Node %s reporting u: %f'%(self.id,self.u))
         
-        if self.monitoringFunction(self.u)>=self.threshold:
-            self.rep()
+    #    if self.monitoringFunction(self.u)>=self.threshold:
+    #        self.rep()
         
     def run(self, vector):
         '''
         main Monitoring Node function
         receive, process updates
         '''
-        self.v=dec(vector)
+        self.v=vector
         
         #EXP
         #self.uLog.append(self.u)

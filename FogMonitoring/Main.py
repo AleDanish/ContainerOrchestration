@@ -3,14 +3,10 @@
 
 import Hostapd
 import Monitoring
-import sys
 
 #curl -d hostname=alessandro-VirtualBox2 -d mode=mobile_presence -d mac=arduino_mac1 http://192.168.56.101:8888
 #curl -d hostname=alessandro-VirtualBox2 -d mode=scale_up http://192.168.56.101:8888
 #curl -d hostname=alessandro-VirtualBox2 -d mode=scale_down http://192.168.56.101:8888
-
-MONITORING_FILE = "dataset.txt"
-MONITORING_TIMEFRAME = 2
 
 # Create threads
 thread1 = Monitoring.myThread_Monitoring(1, "Thread-Monitoring", 1)

@@ -9,10 +9,12 @@ import uuid
 import socket
 import Messages
 import Config
+import numpy as np
 
 MONITORING_FILE = "dataset.txt"
 MONITORING_TIMEFRAME = 2
-MONITORING_TIMEFRAME_INIT = 1
+MONITORING_TIMEFRAME_INIT = 0.5
+NUM_TRAINING_DATA = 20
 
 hostname = socket.gethostname()
 
@@ -29,6 +31,7 @@ def formatResult(out):
     return value
 
 class myThread_Monitoring(threading.Thread):
+    node = Node(nid=uuid.uuid4(), threshold=Config.THRESHOLD_DEFAULT, balancing="Classic")
     def __init__(self, threadID, name, counter):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -38,37 +41,43 @@ class myThread_Monitoring(threading.Thread):
         _mem= psutil.virtual_memory().percent # Return physical memory usage
         _disk=psutil.disk_usage("/").percent # Return physical disk usage
         return _cpu, _mem, _disk
+    def create_file(self):
+        open(MONITORING_FILE, "w")
     def write_file(self, _cpu, _mem, _disk):
         with open(MONITORING_FILE, "a+") as file:
             file.write(str(_cpu) + " " + str(_mem) + " " + str(_disk) + "\n")
-    def initialization(self):
-        for element in range(1,20):
-            _cpu, _mem, _disk, _io = self.monitoring_resource()
+    def creationDataset(self):
+        for index in range(1, NUM_TRAINING_DATA):
+            _cpu, _mem, _disk = self.monitoring_resource()
             self.write_file(_cpu, _mem, _disk)
-            print("CPU:" + str(_cpu) + " MEM:" + str(_mem) + " DISK:" + str(_disk) + " I/O:" + _io + "\n")
+            print(str(index) + ": CPU:" + str(_cpu) + " MEM:" + str(_mem) + " DISK:" + str(_disk))
             time.sleep(MONITORING_TIMEFRAME_INIT)
+    def initialization(self):
+        self.create_file()
+        self.creationDataset()
+        response = Messages.send(hostname, "init", filename=MONITORING_FILE) #communication to cloud
+        self.node.threshold = response["threshold"]
+        self.node.coeff = response["coeff"]
+        self.node.e = response["e"]
+        self.node.vLast = self.node.e
+        print("First estimation from coordinator - e:" + str(self.node.e))
     def run(self):
         self.initialization()
-        
-        node = Node(nid=uuid.uuid4(),threshold=Config.THRESHOLD, balancing="Classic")
-        _cpu, _mem, _disk = self.monitoring_resource()
-        node.run(_cpu/100)
-        response = Messages.send(hostname, "init", node.v, node.u) #communication to cloud
-        node.e = response["e"]
-        node.vLast = node.v
-        print("First estimation from coordinator - e:" + str(node.e))
         while True:
             _cpu, _mem, _disk = self.monitoring_resource()
-            node.run(_cpu/100)
-            print('--Node %s reporting u: %f'%(node.id,node.u))
-            if node.monitoringFunction(node.u)>=node.threshold:
-                response = Messages.send(hostname, "violation", node.v, node.u) #communication to cloud
-                node.e = response["e"]
-                node.vLast = node.v
-                print("New estimation from coordinator - e:" + str(node.e))
-            time.sleep(MONITORING_TIMEFRAME)
-        
-        while True:
-            _cpu, _mem, _disk = self.monitoring_resource()
-            self.write_file(_cpu, _mem, _disk)
+            self.node.run(np.array([_cpu, _mem, _disk]))
+            print("Node " + str(self.node.id) + " reporting u: " + np.array_str(self.node.u))
+            functionValue = self.node.monitoringFunction(self.node.coeff, self.node.u)
+            if functionValue > -1000:#self.node.threshold:
+                print("Found a local violation on the monitored resources - SCALE UP")
+                response = Messages.send(hostname, "scale_up", self.node.v, self.node.u) #communication to cloud
+                self.node.e = response["e"]
+                self.node.vLast = self.node.v
+                print("New estimation from coordinator - e:" + str(self.node.e))
+            elif functionValue < -self.node.threshold:
+                print("Found a local violation on the monitored resources - SCALE DOWN")
+                #response = Messages.send(hostname, "scale_down", self.node.v, self.node.u) #communication to cloud
+                #self.node.e = response["e"]
+                #self.node.vLast = self.node.v
+                #print("New estimation from coordinator - e:" + str(self.node.e))
             time.sleep(MONITORING_TIMEFRAME)
