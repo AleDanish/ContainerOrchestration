@@ -2,6 +2,7 @@ import random
 import Config
 from Node import Node
 from Utils import dec,deDec
+import numpy as np
 
 class Coordinator(Node):
     ''' geometric monitoring, Coordinator node '''
@@ -28,8 +29,9 @@ class Coordinator(Node):
         self.monitoringFunction=monitoringFunction
         
         self.nodes=nodes    #dictionary {"id":weight,}
-        self.balancingSet=set() #set containing tuples (nodeId,v,u) if classicBalance, (nodeId,v,u,vel) if heuristicBalance
+        self.balancingSet=[] #set containing tuples (nodeId,v,u) if classicBalance, (nodeId,v,u,vel) if heuristicBalance
         self.sumW=sum(nodes.values())
+        self.coeff=0
         
         self.e=0
         
@@ -118,9 +120,15 @@ class Coordinator(Node):
             @override
             balance method based on original paper
         '''
-        self.balancingSet.add((sender,)+dat)
+        self.balancingSet.append([sender,dat[0], dat[1]])
         
-        b=sum(u*self.nodes[i] for i,v,u in self.balancingSet)/sum(self.nodes[i] for i,v,u in self.balancingSet)
+        sumU=[0,0,0]
+        sumW=0
+        for i,V,U in self.balancingSet:
+            for index in range(0,3):
+                sumU[index]+=U[index]*self.nodes[i]
+            sumW+=self.nodes[i]
+        b = np.array(sumU)/sumW
         
         #DBG
         if len(self.balancingSet)==1:
@@ -128,10 +136,11 @@ class Coordinator(Node):
         else:
             print("balancing set is:")
             print(self.balancingSet)
-            
-        print("Coord: balance vector is: %f,f(b)= %f, threshold is %f"%(b,self.monitoringFunction(b),self.threshold))
+
+        valueMonitoring = self.monitoringFunction(self.coeff, b)            
+        print("Coord: balance vector is: " + "".join(str(x)+" " for x in b) + ", f(b)= %f, threshold is %f"%(valueMonitoring,self.threshold))
         
-        if self.monitoringFunction(b)<self.threshold:
+        if abs(valueMonitoring) < self.threshold:
             #----------------------------------------------------------------
             #SUCESSfull balancing
             #----------------------------------------------------------------
@@ -168,14 +177,24 @@ class Coordinator(Node):
                 #----------------
                 # 1 Node - Global Violation
                 #----------------
-                vGl=sum(v*self.nodes[i] for i,v,u in self.balancingSet)/sum(self.nodes[i] for i,v,u in self.balancingSet)   #global stats vector
-                uGl=sum(u*self.nodes[i] for i,v,u in self.balancingSet)/sum(self.nodes[i] for i,v,u in self.balancingSet)   #global stats vector (via drift vectors *convexity property*)
+                
+                sumV=[0,0,0]
+                sumU=[0,0,0]
+                for i,V,U in self.balancingSet:
+                    for index in range(0,3):
+                        sumV[index]+=V[index]*self.nodes[i]
+                        sumU[index]+=U[index]*self.nodes[i]
+                vGl = np.array(sumV)/sum(self.nodes[i] for i,v,u in self.balancingSet)
+                uGl = np.array(sumU)/sum(self.nodes[i] for i,v,u in self.balancingSet)
+                
+                #vGl=sum(v*self.nodes[i] for i,v,u in self.balancingSet)/sum(self.nodes[i] for i,v,u in self.balancingSet)   #global stats vector
+                #uGl=sum(u*self.nodes[i] for i,v,u in self.balancingSet)/sum(self.nodes[i] for i,v,u in self.balancingSet)   #global stats vector (via drift vectors *convexity property*)
                 
                 #EXP - log balancing vector
                 #self.send(None, "balancingVector", b)
                 
                 #DBG
-                print("Coord: GLOBAL VIOLATION:v=%f,u=%f,f(v)=%f"%(vGl,uGl,self.monitoringFunction(vGl)))
+                print("Coord: GLOBAL VIOLATION:v="  + "".join(str(vGl)) + ",u=" + "".join(str(uGl)) + " ,f(v)=%f"%(self.monitoringFunction(self.coeff, vGl)))
                 
                 self.e=vGl
                 

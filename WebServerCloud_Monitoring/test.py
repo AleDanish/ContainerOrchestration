@@ -36,7 +36,10 @@ class MainHandler(tornado.web.RequestHandler):
                 print(MODE[mode] + " Initialization request without dataset file") 
         elif mode == "scale_up":
             estimation = Monitoring.application_monitoring(coordinator, hostname_request, arguments, nodes)
-            self.write(estimation)
+            estimation = {'e' : estimation.tolist()}
+            self.write(json.dumps(estimation))
+        elif mode == "scale_down":
+            print("Scale down")
 
     def get(self):
         print("Arrived request without arguments")

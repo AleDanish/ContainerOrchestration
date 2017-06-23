@@ -52,7 +52,6 @@ def calculateCoefficientFunction(file):
     coeff_0 = np.ones(num_coeff)
     
     lst_sqrs_result = scipy.optimize.least_squares(least_squares_residuals, coeff_0, args=(input_data, target))
-    # Test what the squared error of the returned result is
     coeff = lst_sqrs_result.x
     lst_sqrs_output = our_function(coeff, data)
     print("Calculated Coefficients: A="+str(coeff[0])+" B="+str(coeff[1])+" C="+str(coeff[2]))
@@ -63,6 +62,7 @@ def initialization_monitoring(coordinator, hostname_request, nodes,file):
     coeff, data = calculateCoefficientFunction(file)
     monitoringFunction=lambda coeff, data: coeff[0]*data[0]+coeff[1]*data[1]+coeff[2]*data[2]
     coordinator.setMonitoringFunction(monitoringFunction)
+    coordinator.coeff=coeff
     nodes[hostname_request]=1
     coordinator.e = 0
     coordinator.setNodes(nodes)    
@@ -80,10 +80,15 @@ def application_monitoring(coordinator, hostname_request, arguments, nodes):
         weigth = 1 #TODO
         nodes[node]=weigth
     coordinator.setNodes(nodes)
-    V = dec(arguments["v"][0].decode("utf-8"))#array
-    U = dec(arguments["u"][0].decode("utf-8"))#array
+    v0 = float(arguments["v0"][0].decode("utf-8"))
+    v1 = float(arguments["v1"][0].decode("utf-8"))
+    v2 = float(arguments["v2"][0].decode("utf-8"))
+    u0 = float(arguments["u0"][0].decode("utf-8"))
+    u1 = float(arguments["u1"][0].decode("utf-8"))
+    u2 = float(arguments["u2"][0].decode("utf-8"))
+    V=[v0,v1,v2]
+    U=[u0,u1,u2]
     dat = (V,U)
     e, s = coordinator.balance(dat, hostname_request)
     print("String: " + str(s) + " new e=" + str(e))
-    estimation = {'e' : float(e)}
-    return estimation
+    return e
