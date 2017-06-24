@@ -6,7 +6,7 @@ class Node:
     general Node class
     '''
     
-    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.monitoringFunction, weight=1, threshold=Config.THRESHOLD_DEFAULT,balancing=Config.balancing):
+    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.monitoringFunction, weight=1, balancing=Config.balancing):
         '''
         Constructor
         args:
@@ -23,7 +23,7 @@ class Node:
         
         self.id=nid
         self.weight=weight
-        self.threshold=threshold
+        self.threshold=0
         self.monitoringFunction=monitoringFunction
         self.balancing=balancing
     
@@ -56,11 +56,9 @@ class Node:
         receive, process updates
         '''
         self.v=vector
-        
-        #EXP
-        #self.uLog.append(self.u)
-        
-        self.u=self.e+(self.v-self.vLast)+(self.delta/self.weight)
+    #    self.u=self.e+(self.v-self.vLast)+(self.delta/self.weight)
+        self.u=[(e_i+v_i-vLast_i)+(self.delta/self.weight) for e_i,v_i,vLast_i in zip(self.e,self.v,self.vLast)]
+        self.vLast=self.v
     
     '''
     ------------signal handling
