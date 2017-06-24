@@ -6,7 +6,7 @@ class Node:
     general Node class
     '''
     
-    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.monitoringFunction, weight=1, balancing=Config.balancing):
+    def __init__(self, nid=uuid.uuid4(), monitoringFunction=Config.monitoringFunction, weight=1):
         '''
         Constructor
         args:
@@ -25,7 +25,6 @@ class Node:
         self.weight=weight
         self.threshold=0
         self.monitoringFunction=monitoringFunction
-        self.balancing=balancing
     
     '''
     --------------getters

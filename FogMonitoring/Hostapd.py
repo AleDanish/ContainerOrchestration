@@ -4,11 +4,11 @@
 import subprocess
 import threading
 import time
-
-HOSTAPD_TIMEFRAME = 10
+import Config
+import Messages
 
 class myThread_Hostapd(threading.Thread):
-    def __init__(self, threadID, name, counter):
+    def __init__(self, threadID, name):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
@@ -24,8 +24,9 @@ class myThread_Hostapd(threading.Thread):
                 return devices
     def run(self):
         while True:
-            devices = self.get_devices()
+            #device_mac = self.get_devices()
             
             # se device nouvo...contatta il cloud
+            Messages.send("mobile_presence", mac="mac_address2")
             
-            time.sleep(HOSTAPD_TIMEFRAME)
+            time.sleep(Config.HOSTAPD_TIMEFRAME)

@@ -1,13 +1,15 @@
 import subprocess
 import ast
+import Config
+import socket
 
-WEB_SERVER_PORT="8889"
-WEB_SERVER_IP="192.168.56.101"
-
-def send(hostname, mode, v=None, u=None, filename=None):
-    cmd="curl http://" + WEB_SERVER_IP + ":" + WEB_SERVER_PORT + " -F mode=" + mode + " -F hostname=" + hostname
+def send(mode, v=None, u=None, filename=None, mac=None):
+    hostname = socket.gethostname()
+    cmd="curl http://" + Config.WEB_SERVER_IP + ":" + Config.WEB_SERVER_PORT + " -F mode=" + mode + " -F hostname=" + hostname
     if filename is not None:
         cmd+=" -F file=@"+filename
+    elif mac is not None:
+        cmd+=" -F mac="+mac
     elif (v is not None) and (u is not None):
         cmd += " -F v0=" + str(v[0]) + " -F v1=" + str(v[1]) + " -F v2=" + str(v[2]) + " -F u0=" + str(u[0]) + " -F u1=" + str(u[1]) + " -F u2=" + str(u[2]) 
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)

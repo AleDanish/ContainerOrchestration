@@ -1,7 +1,18 @@
 
+'''
+    MONITORING THREAD
+'''
 monitoringFunction=lambda coeff, data: coeff[0]*data[0]+coeff[1]*data[1]+coeff[2]-data[2]#ax+by+c-z
-balancing="Classic"
 MONITORING_FILE = "dataset.txt"
 MONITORING_TIMEFRAME = 2
 MONITORING_TIMEFRAME_INIT = 0.5
-NUM_TRAINING_DATA = 20
+NUM_TRAINING_DATA = 21
+
+
+'''
+    HOSTAPD THREAD
+'''
+#HOSTAPD_TIMEFRAME = 10
+HOSTAPD_TIMEFRAME = 1000
+WEB_SERVER_PORT="8888"
+WEB_SERVER_IP="192.168.56.101"
