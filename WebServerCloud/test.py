@@ -1,118 +1,136 @@
-import tornado.ioloop
 import tornado.web
-import deploy
-import swarm_management
-
-WEB_SERVER_PORT_FOG_NODES = 8888
-THIS_IP = "192.168.56.101" 
-MASTER_PORT = 2377
-WEB_SERVER_PORT = 8888
-
-APP_NAME = "app"
-MODE = {'mobile_presence':'MOBILE_PRESENCE', 'scale_up':'SCALE_UP', 'scale_down':'SCALE_DOWN' }
-DEVICE_HOSTNAME_MAP = {}
+import Monitoring
+from Coordinator import Coordinator
+import json
+import Config
+import Swarm_Management
+import Deploy
+import subprocess
+import ast
 
 #curl -d hostname=alessandro-VirtualBox -d mode=mobile_presence -d mac= http://10.101.101.119:8888 #192.168.56.101
 
-def application_management(mode, hostname_requesting, mac_new_device):
-    if mode =="mobile_presence":
-        hostname_receiver = hostname_requesting
-        hostname_to_drain = DEVICE_HOSTNAME_MAP.get(mac_new_device, "")
-        DEVICE_HOSTNAME_MAP[mac_new_device] = hostname_receiver
+#NODES_WEIGTH_MAP = {'alessandro-VirtualBox2':1, 'alessandro-VirtualBox3':1}
+nodes={}
+coordinator=Coordinator(threshold=Config.THRESHOLD_DEFAULT)
 
-        label_key = hostname_receiver
-        label_value = "true"
-        swarm_management.add_label_to_node(hostname_receiver, label_key, label_value)
-        print("Added Label " + label_key + ":" + label_value + " to hostname " + hostname_receiver)
-        replicas_num = 1 #always 1
-        deploy.edit_deploy_settings_replicas(replicas_num)
-        deploy.edit_deploy_settings_node_labes(label_key, label_value)
-        print(MODE[mode] + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
-    elif mode == "scale_up":
-        hostname_list = swarm_management.get_swarm_node_list("Drain")
-        hostname_receiver = ""
-        for hostname in hostname_list:
-            if hostname != hostname_requesting:
-                hostname_receiver = hostname
-                break
-        
-        #update the node into the cluster
-        cluster_nodes = swarm_management.get_node_labels(hostname_requesting)
-        label_key_receiver = hostname_receiver
-        label_value_receiver = "true"
-        swarm_management.add_label_to_node(hostname_receiver, label_key_receiver, label_value_receiver)
-        print("Added receiver Label " + label_key_receiver + ":" + label_value_receiver + " to hostname " + hostname_receiver + " for future possible usage")
-        for node in cluster_nodes:
-            label_key_requesting = hostname_receiver
-            label_value_requestig = "true"
-            swarm_management.add_label_to_node(node, label_key_requesting, label_value_requestig)
-            print("Added requesting Label " + label_key_requesting + ":" + label_value_requestig + " to hostname " + hostname_receiver + " to link the receiver node to the requesting hostname")
-            label_key_receiver = node
-            label_value_receiver = "true"
-            swarm_management.add_label_to_node(hostname_receiver, label_key_receiver, label_value_receiver)
-            print("Added receiver Label " + label_key_receiver + ":" + label_value_receiver + " to hostname " + hostname_receiver + " for future possible usage")
-        
-        replicas_num = deploy.get_replicas_number() + 1
-        deploy.edit_deploy_settings_replicas(replicas_num)
-        deploy.edit_deploy_settings_node_labes(hostname_requesting, "true") #hostname receiver or requesting is the same
-        print(MODE[mode] + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
-        hostname_to_drain = ""
-    elif mode == "scale_down":
-        cluster_nodes = swarm_management.get_node_labels(hostname_requesting)
-        cluster_nodes = [node for node in cluster_nodes if node != hostname_requesting]
-        if len(cluster_nodes) <= 0:
-            print(MODE[mode] + " mode - The requesting node cannot be removed because alone and not linked to other nodes")
+def send_message_write_file(ip_hostname_receiver):
+    cmd="curl http://" + ip_hostname_receiver + ":" + str(Config.WEB_SERVER_FOG_PORT)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    file = open(Config.MONITORING_FILE, "w")
+    for line in iter(proc.stdout.readline,''):
+        line = line.decode("utf-8")
+        if line == '' :
+            file.close()
+            break
         else:
-            print(MODE[mode] + " mode - The requesting node can be removed because part of a cluster")
-            swarm_management.delete_labels_from_node(hostname_requesting)
-            print("Removed all the labels on the requesting hostname " + hostname_requesting)
-            for node in cluster_nodes:
-                swarm_management.remove_label_from_node(node, hostname_requesting)
-            print("Removed Label about the requesting hostname " + hostname_requesting + " from all the node of the cluster")
-            
-            replicas_num = deploy.get_replicas_number() - 1
-            deploy.edit_deploy_settings_replicas(replicas_num)
-            hostname_receiver = cluster_nodes[0] # node of the cluster to re-deploy the service
-            deploy.edit_deploy_settings_node_labes(hostname_receiver, "true")
-            print(MODE[mode] + " mode - Docker compose settings file modified for the hostname " + hostname_receiver)
-            hostname_to_drain = hostname_requesting
+            file.write(line)
 
-    """ Code for everyone"""
-    if hostname_receiver is not "":
-        swarm_management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
-        print(MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
-        print(MODE[mode] + " mode - Creating new services for the application " + APP_NAME)
-        swarm_management.create_services(APP_NAME)
-    else:
-        print(MODE[mode] + " no available node can help: all node busy")
-        
-    if hostname_to_drain is not "":
-        node_id_to_drain = swarm_management.id_from_hostname(hostname_to_drain)
-        swarm_management.set_availability_node(node_id_to_drain, "drain") #swarm will create a new id for the host -> the id found is no longer used
-        swarm_management.delete_labels_from_node(hostname_to_drain)
-        print(MODE[mode] + " mode - Drain node with ip " + node_id_to_drain + " and cleared Labels")
+def send_message(mode, ip_hostname_receiver):
+    cmd="curl http://" + ip_hostname_receiver + ":" + str(Config.WEB_SERVER_FOG_PORT) + " -F mode=" + mode
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline,''):
+        line = line.decode("utf-8")
+        if line == '' :
+            break
+        else:
+            return ast.literal_eval(line)
+
+def send_message_noresp(mode, ip_hostname_receiver, delta0, delta1, delta2):
+    cmd="curl http://" + ip_hostname_receiver + ":" + str(Config.WEB_SERVER_FOG_PORT) + " -F mode=" + mode + " -F delta0=" + str(delta0) + " -F delta1=" + str(delta1) + " -F delta2=" + str(delta2)
+    subprocess.Popen(cmd, shell=True)
 
 def initialization_nodes():
     """ Setting all the worker nodes in the swarm as Drain """
-    hostname_list = swarm_management.get_swarm_node_list("Ready")
+    hostname_list = Swarm_Management.get_swarm_node_list("Ready")
     for hostname in hostname_list:
-        node_id = swarm_management.id_from_hostname(hostname)
-        swarm_management.set_availability_node(node_id, "drain")
-        swarm_management.delete_labels_from_node(hostname)
+        node_id = Swarm_Management.id_from_hostname(hostname)
+        Swarm_Management.set_availability_node(node_id, "drain")
+        Swarm_Management.delete_labels_from_node(hostname)
         print("Hostname " + hostname + " set to Drain with empty Labels")
-    
+
 class MainHandler(tornado.web.RequestHandler):
     def post(self):
         arguments = self.request.arguments
         mode = arguments["mode"][0].decode("utf-8")
         hostname_request = arguments["hostname"][0].decode("utf-8")
         print("Arrived request from the hostname " + hostname_request + " with the mode " + mode)
-        if mode == "mobile_presence":
+        if mode =="init":
+            try:
+                file_monitoring_setup= self.request.files['file'][0]['body'].decode("utf-8")
+                coeff, estimation = Monitoring.initialization_monitoring(coordinator, hostname_request, file_monitoring_setup)
+                response = {'e' : estimation.tolist(), 'threshold': Config.THRESHOLD_DEFAULT, 'coeff' : coeff.tolist()}
+                print("Estimation vector: " + str(response['e']) + " - threshold: " + str(response['threshold']) + " - coeff: " + str(response['coeff']))
+                self.write(json.dumps(response))
+            except AttributeError:
+                print(Config.MODE[mode] + " Initialization request without dataset file")
+        elif mode == "mobile_presence":
             mac_new_device = arguments["mac"][0].decode("utf-8") #Arduino MAC address
-        else:
+            Deploy.new_node(hostname_request, mac_new_device, mode)
+            
+        elif mode == "scale_up":
             mac_new_device = None
-        application_management(mode, hostname_request, mac_new_device)
-
+            v0 = float(arguments["v0"][0].decode("utf-8"))
+            v1 = float(arguments["v1"][0].decode("utf-8"))
+            v2 = float(arguments["v2"][0].decode("utf-8"))
+            u0 = float(arguments["u0"][0].decode("utf-8"))
+            u1 = float(arguments["u1"][0].decode("utf-8"))
+            u2 = float(arguments["u2"][0].decode("utf-8"))
+            V=[v0,v1,v2]
+            U=[u0,u1,u2]
+            
+            # create the balancing set and the nodes list 
+            nodes={}
+            coordinator.balancingSet = []
+            message = "global_violation"
+            new_node = True
+            while message == "global_violation":
+                drain_list = Swarm_Management.get_swarm_node_list("Drain")
+                hostname_receiver = ""
+                for hostname in drain_list:
+                    if hostname != hostname_request:
+                        hostname_receiver = hostname
+                        break
+                
+                #Deploy.scale_node(hostname_request, hostname_receiver, mode)
+                
+                new_node = False
+                for label in Swarm_Management.get_node_labels(hostname_request):
+                    if label == hostname_request:
+                        weigth = 1
+                        nodes[label]=weigth
+                        coordinator.balancingSet.append([hostname_request, V, U])
+                    else:
+                        try:
+                            nodes[label] #if new catch exception
+                        except KeyError:
+                            new_node = True
+                            weigth = 1
+                            nodes[label]=weigth
+                            ip_hostname = Config.MAP_HOSTNAME_IP[label]
+                            response = send_message("info", ip_hostname)
+                            V_node = response["v"]
+                            U_node = response["u"]
+                            coordinator.balancingSet.append([label, V_node, U_node])
+                
+                if  new_node == False:
+                    #no node available for the balancing process
+                    break
+                    
+                value, message = Monitoring.application_monitoring(coordinator, hostname_request, nodes)
+                
+            if message == "balanced":
+                for element in value:
+                    send_message_noresp("balance", ip_hostname, element[1][0], element[1][1], element[1][2])
+            elif message == "global_violation":
+                estimation = {'e' : estimation.tolist()}
+                self.write(json.dumps(estimation))
+                
+        elif mode == "scale_down":
+            print("Scale down")
+            mac_new_device = None
+            Deploy.delete_node(hostname_request, mode)
+    
     def get(self):
         print("Arrived request without arguments")
         
@@ -120,8 +138,8 @@ def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
 if __name__ == "__main__":
-    initialization_nodes()
+    #initialization_nodes()
     app = make_app()
-    app.listen(WEB_SERVER_PORT)
-    print("WebServer listening on port " + str(WEB_SERVER_PORT))
+    app.listen(Config.WEB_SERVER_PORT)
+    print("WebServer listening on port " + str(Config.WEB_SERVER_PORT))
     tornado.ioloop.IOLoop.current().start()

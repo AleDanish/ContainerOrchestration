@@ -6,7 +6,7 @@ services:
     - "27017:27017"
     deploy:
        mode: replicated
-       replicas: 1
+       replicas: 2
        restart_policy:
          condition: none
        placement:
@@ -18,7 +18,7 @@ services:
     - "1883:1883"
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
       restart_policy:
          condition: none
       placement:
@@ -28,7 +28,7 @@ services:
     image: alez/test-app-raspi:3
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
       restart_policy:
          condition: on-failure
          delay: 20s
