@@ -13,20 +13,21 @@ class myThread_Hostapd(threading.Thread):
         self.threadID = threadID
         self.name = name
     def get_devices(self):
-        devices = []
         cmd = "hostapd_cli all_sta"
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        count = 1
         for line in iter(proc.stdout.readline,''):
             line = line.decode("utf-8").replace("\n","")
-            if line != "":
-                devices.append(line)
+            if count == 2:
+                return line            
             else:
-                return devices
+                count+=1
+        return ""
     def run(self):
         while True:
             #device_mac = self.get_devices()
             
             # se device nouvo...contatta il cloud
-            Messages.send("mobile_presence", mac="mac_address2")
+            Messages.send("mobile_presence", mac="mac_address")
             
             time.sleep(Config.HOSTAPD_TIMEFRAME)
