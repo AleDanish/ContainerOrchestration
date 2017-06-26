@@ -101,7 +101,8 @@ class MainHandler(tornado.web.RequestHandler):
 
                 #move arduino to another position
                 try:
-                    client = MQTTClient(Config.MQTT_IP, Config.MQTT_CLIENT_NAME)
+                    ip_mqtt = Config.MAP_HOSTNAME_IP[hostname_request]
+                    client = MQTTClient(ip_mqtt, Config.MQTT_CLIENT_NAME)
                     client.connect()
                     client.publish(Config.MQTT_TOPIC, Config.MQTT_MESSAGE)
                     client.disconnect()
@@ -116,7 +117,7 @@ class MainHandler(tornado.web.RequestHandler):
                         coordinator.balancingSet.append([hostname_request, V, U])
                     else:
                         try:
-                            nodes[label] #if new catch exception
+                            nodes[label] #if new -> catch exception
                         except KeyError:
                             new_node = True
                             weigth = 1

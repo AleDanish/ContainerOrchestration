@@ -16,7 +16,7 @@ MONITORING_FUNCTION=lambda coeff,data:coeff[0]*data[0]+coeff[1]*data[1]+coeff[2]
 
 
 ''' MQTT '''
-MQTT_IP = "172.17.0.1"
+#MQTT_IP = "172.17.0.1"
 MQTT_CLIENT_NAME = "coordinator"
 MQTT_TOPIC = "orchestration/scale"
 MQTT_MESSAGE = "move"
