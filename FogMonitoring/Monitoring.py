@@ -21,11 +21,12 @@ import Config
 #            value=value*1000
 #    return value
 
+_disk=psutil.disk_usage("/").percent
+
 def monitoring_resource():
     _cpu=psutil.cpu_percent() # Return physical cpu usage
     _mem= psutil.virtual_memory().percent # Return physical memory usage
     #_disk=psutil.disk_usage("/").percent # Return physical disk usage
-    _disk=45
     return _cpu, _mem, _disk
 
 class myThread_Monitoring(threading.Thread):
@@ -41,12 +42,16 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            _cpu = 80.0
-            _mem = 75.1
+            _cpu = 70.0
+            _mem = 65.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
                 self.node.delta = Config.DELTA_SHARED
                 Config.DELTA_SHARED = 0
+            elif Config.E_SHARED != 0:
+                self.node.e = Config.E_SHARED
+                Config.E_SHARED = 0
+                self.node.delta = [0,0,0]
             self.node.run([_cpu, _mem, _disk])
             Config.U_SHARED = self.node.u
             Config.V_SHARED = self.node.v
@@ -54,17 +59,15 @@ class myThread_Monitoring(threading.Thread):
             functionValue = self.node.monitoringFunction(self.node.coeff, self.node.u)
             if functionValue > 0: #self.node.threshold:
                 print("Found a local violation on the monitored resources - SCALE UP")
-                Messages.send_noresp("scale_up", self.node.v, self.node.u) #communication to cloud
-                while (Config.DELTA_SHARED == 0) or (Config.E_SHARED == 0):
-                    pass
-                if Config.DELTA_SHARED != 0:
-                    self.node.delta = Config.DELTA_SHARED
-                    Config.DELTA_SHARED = 0
-                elif Config.E_SHARED != 0:
-                    self.node.e = Config.E_SHARED
-                    Config.E_SHARED = 0
+                response = Messages.send_noresp("scale_up", self.node.v, self.node.u) #communication to cloud
+                try:
+                    self.node.e = response["e"]
+                    self.node.delta = [0,0,0]
+                    print("New estimation from coordinator - e:" + str(self.node.e))
+                except KeyError:
+                    self.node.delta = response['delta']
+                    print("New estimation from coordinator - delta:" + str(self.node.delta))
                 self.node.vLast = self.node.v
-                print("New estimation from coordinator - e:" + str(self.node.e))
             elif functionValue < (-self.node.threshold):
                 print("Found a local violation on the monitored resources - SCALE DOWN")
                 #response = Messages.send(hostname, "scale_down", self.node.v, self.node.u) #communication to cloud

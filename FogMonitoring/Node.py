@@ -17,7 +17,7 @@ class Node:
         
         self.vLast=0
         self.u=0
-        self.delta=0
+        self.delta=[0,0,0]
         self.e=0
         self.coeff=0
         
@@ -56,7 +56,7 @@ class Node:
         '''
         self.v=vector
     #    self.u=self.e+(self.v-self.vLast)+(self.delta/self.weight)
-        self.u=[(e_i+v_i-vLast_i)+(self.delta/self.weight) for e_i,v_i,vLast_i in zip(self.e,self.v,self.vLast)]
+        self.u=[(e_i+v_i-vLast_i)+(d_i/self.weight) for e_i,v_i,vLast_i,d_i in zip(self.e,self.v,self.vLast,self.delta)]
         self.vLast=self.v
     
     '''
