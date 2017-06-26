@@ -69,15 +69,19 @@ class MainHandler(tornado.web.RequestHandler):
             Deploy.new_node(hostname_request, mac_new_device, mode)
             
         elif mode == "scale_up":
-            mac_new_device = None
             v0 = float(arguments["v0"][0].decode("utf-8"))
             v1 = float(arguments["v1"][0].decode("utf-8"))
             v2 = float(arguments["v2"][0].decode("utf-8"))
             u0 = float(arguments["u0"][0].decode("utf-8"))
             u1 = float(arguments["u1"][0].decode("utf-8"))
             u2 = float(arguments["u2"][0].decode("utf-8"))
+            coeff0 = float(arguments["coeff0"][0].decode("utf-8"))
+            coeff1 = float(arguments["coeff1"][0].decode("utf-8"))
+            coeff2 = float(arguments["coeff2"][0].decode("utf-8"))
             V=[v0,v1,v2]
             U=[u0,u1,u2]
+            coeff=[coeff0, coeff1, coeff2]
+            coordinator.coeff = coeff
             
             # create the balancing set and the nodes list 
             nodes={}
@@ -92,7 +96,7 @@ class MainHandler(tornado.web.RequestHandler):
                         hostname_receiver = hostname
                         break
                 
-                #Deploy.scale_node(hostname_request, hostname_receiver, mode)
+                Deploy.scale_node(hostname_request, hostname_receiver, mode)
                 
                 new_node = False
                 for label in Swarm_Management.get_node_labels(hostname_request):
@@ -113,27 +117,57 @@ class MainHandler(tornado.web.RequestHandler):
                             U_node = response["u"]
                             coordinator.balancingSet.append([label, V_node, U_node])
                 
-                if  new_node == False:
-                    #no node available for the balancing process
+                if  new_node == False: # no node available for the balancing process
                     break
-                    
+
                 value, message = Monitoring.application_monitoring(coordinator, hostname_request, nodes)
                 
             for element in value:
                 if element[0] == hostname_request:
                     if message == "global_violation":
                         value = {'e' : element[1].tolist()}
-                    elif message == "balance":
+                    elif message == "balanced":
                         value = {'delta' : element[1].tolist()}
                     self.write(json.dumps(value))
                 else:
-                    send_message_noresp(message, ip_hostname, element[1][0], element[1][1], element[1][2])
+                    ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
+                    send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
 
         elif mode == "scale_down":
             print("Scale down")
-            mac_new_device = None
+            v0 = float(arguments["v0"][0].decode("utf-8"))
+            v1 = float(arguments["v1"][0].decode("utf-8"))
+            v2 = float(arguments["v2"][0].decode("utf-8"))
+            u0 = float(arguments["u0"][0].decode("utf-8"))
+            u1 = float(arguments["u1"][0].decode("utf-8"))
+            u2 = float(arguments["u2"][0].decode("utf-8"))
+            V=[v0,v1,v2]
+            U=[u0,u1,u2]
+            
+            nodes={}
+            balancingSet = []
+            new_node = False
+            for label in Swarm_Management.get_node_labels(hostname_request):
+                if label != hostname_request:
+                    new_node = True
+                    weigth = 1
+                    nodes[label]=weigth
+                    ip_hostname = Config.MAP_HOSTNAME_IP[label]
+                    response = send_message("info", ip_hostname)
+                    V_node = response["v"]
+                    U_node = response["u"]
+                    balancingSet.append([label, V_node, U_node])
+
             Deploy.delete_node(hostname_request, mode)
-    
+            
+            for element in balancingSet:
+                w=nodes[0][0]
+                dat = [V,w]
+                sumW = w
+                estimation = coordinator.init_estimation(dat,hostname_request, sumW)
+                ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
+                send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
+
     def get(self):
         print("Arrived request without arguments")
         

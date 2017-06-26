@@ -40,7 +40,6 @@ def calculateCoefficientFunction(file):
 def initialization_monitoring(coordinator, hostname_request, file):
     coeff, data = calculateCoefficientFunction(file)
     coordinator.setMonitoringFunction(Config.MONITORING_FUNCTION)
-    coordinator.coeff=coeff
     coordinator.e = 0
     x_mean = np.mean(data[:,(0)])
     y_mean = np.mean(data[:,(1)])
@@ -54,8 +53,6 @@ def initialization_monitoring(coordinator, hostname_request, file):
 
 def application_monitoring(coordinator, hostname_request, nodes):
     coordinator.nodes = nodes
-    #dat = (V_new_node, U_new_node)
-    #e, s = coordinator.estimation(dat, hostname_request)
     value, s = coordinator.balance()
     print("String: " + str(s) + " value for the nodes=" + str(value))
     return value, s
