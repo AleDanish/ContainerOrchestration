@@ -4,7 +4,7 @@ MAINTAINER Alessandro Zanni
 
 ADD . /TestPy
 
-RUN pip install pymongo
-RUN pip install paho-mqtt
+RUN pip3 install pymongo
+RUN pip3 install paho-mqtt
 
-CMD [ "python", "TestPy/test.py" ]
+CMD [ "python3", "TestPy/test.py" ]
