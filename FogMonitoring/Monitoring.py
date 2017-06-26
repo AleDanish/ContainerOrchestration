@@ -42,8 +42,8 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            _cpu = 70.0
-            _mem = 65.1
+            _cpu = 10.0
+            _mem = 15.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
                 self.node.delta = Config.DELTA_SHARED
@@ -57,9 +57,21 @@ class myThread_Monitoring(threading.Thread):
             Config.V_SHARED = self.node.v
             print("Node " + str(self.node.id) + " reporting u: " + str(self.node.u))
             functionValue = self.node.monitoringFunction(self.node.coeff, self.node.u)
-            if functionValue > 0: #self.node.threshold:
+            if functionValue > self.node.threshold:
                 print("Found a local violation on the monitored resources - SCALE UP")
-                response = Messages.send_noresp("scale_up", self.node.v, self.node.u) #communication to cloud
+                response = Messages.send("scale_up", v=self.node.v, u=self.node.u, coeff=self.node.coeff) #communication to cloud
+                try:    
+                    self.node.e = response["e"]
+                    self.node.delta = [0,0,0]
+                    print("New estimation from coordinator - e:" + str(self.node.e))
+                except KeyError:
+                    self.node.delta = response['delta']
+                    print("New estimation from coordinator - delta:" + str(self.node.delta))
+                self.node.vLast = self.node.v
+            elif functionValue < 0: #(-self.node.threshold):
+                print("Found a local violation on the monitored resources - SCALE DOWN")
+                print("Found a local violation on the monitored resources - SCALE UP")
+                response = Messages.send("scale_down", v=self.node.v, u=self.node.u) #communication to cloud
                 try:
                     self.node.e = response["e"]
                     self.node.delta = [0,0,0]
@@ -68,10 +80,4 @@ class myThread_Monitoring(threading.Thread):
                     self.node.delta = response['delta']
                     print("New estimation from coordinator - delta:" + str(self.node.delta))
                 self.node.vLast = self.node.v
-            elif functionValue < (-self.node.threshold):
-                print("Found a local violation on the monitored resources - SCALE DOWN")
-                #response = Messages.send(hostname, "scale_down", self.node.v, self.node.u) #communication to cloud
-                #self.node.e = response["e"]
-                #self.node.vLast = self.node.v #inutile?
-                #print("New estimation from coordinator - e:" + str(self.node.e))
             time.sleep(Config.MONITORING_TIMEFRAME)

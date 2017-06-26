@@ -62,7 +62,7 @@ class MainHandler(tornado.web.RequestHandler):
             #self.write(file)
             values = {'u':Config.U_SHARED, 'v':Config.V_SHARED}
             self.write(json.dumps(values))
-        elif mode == "balance":
+        elif mode == "balanced":
             delta0 =arguments["value0"][0].decode("utf-8")
             delta1 =arguments["value1"][0].decode("utf-8")
             delta2 =arguments["value2"][0].decode("utf-8")
