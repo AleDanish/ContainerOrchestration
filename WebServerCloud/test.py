@@ -104,8 +104,11 @@ class MainHandler(tornado.web.RequestHandler):
                     ip_mqtt = Config.MAP_HOSTNAME_IP[hostname_request]
                     client = MQTTClient(ip_mqtt, Config.MQTT_CLIENT_NAME)
                     client.connect()
+                    print("Connected to the MQTT broker on IP:" + ip_mqtt)
                     client.publish(Config.MQTT_TOPIC, Config.MQTT_MESSAGE)
+                    print("Pubblished on TOPIC:"+ Config.MQTT_TOPIC + " the MESSAGE:" + Config.MQTT_MESSAGE)
                     client.disconnect()
+                    print("Disconnected from MQTT broker")
                 except:
                     print("Error to connect to MQTT broker")
 
