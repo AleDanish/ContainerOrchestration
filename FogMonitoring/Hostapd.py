@@ -29,8 +29,8 @@ class myThread_Hostapd(threading.Thread):
     def run(self):
         while True:
             #device_mac = "mac_address"
-            device_mac = ""
-            #device_mac = self.get_devices()
+            #device_mac = ""
+            device_mac = self.get_devices()
             print("device: " + device_mac)
             if (device_mac != "") and (self.lastDevice == ""):
                 print("Device MAC detected:" + device_mac)
