@@ -28,7 +28,9 @@ class myThread_Hostapd(threading.Thread):
         return ""
     def run(self):
         while True:
-            device_mac = self.get_devices()
+            #device_mac = "mac_address"
+            device_mac = ""
+            #device_mac = self.get_devices()
             print("device: " + device_mac)
             if (device_mac != "") and (self.lastDevice == ""):
                 print("Device MAC detected:" + device_mac)
@@ -38,4 +40,4 @@ class myThread_Hostapd(threading.Thread):
                 print("Lost device")
             self.lastDevice = device_mac
                 
-        time.sleep(Config.HOSTAPD_TIMEFRAME)
+            time.sleep(Config.HOSTAPD_TIMEFRAME)

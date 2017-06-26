@@ -9,18 +9,6 @@ import uuid
 import Messages
 import Config
 
-#def formatResult(out):
-#    if out=='0':
-#        return int(out)
-#    else:
-#        value=int(out[:-1])
-#        unit=out[-1:]
-#        if unit=='B':
-#            value=value/1000
-#        elif unit=='M':
-#            value=value*1000
-#    return value
-
 _disk=psutil.disk_usage("/").percent
 
 def monitoring_resource():
@@ -28,6 +16,29 @@ def monitoring_resource():
     _mem= psutil.virtual_memory().percent # Return physical memory usage
     #_disk=psutil.disk_usage("/").percent # Return physical disk usage
     return _cpu, _mem, _disk
+
+def create_file():
+    open(Config.MONITORING_FILE, "w")
+    
+def write_file(_cpu, _mem, _disk):
+    with open(Config.MONITORING_FILE, "a+") as file:
+        file.write(str(_cpu) + " " + str(_mem) + " " + str(_disk) + "\n")
+        
+def creationDataset2():
+    _cpu, _mem, _disk = monitoring_resource()
+    for index in range(1, Config.NUM_TRAINING_DATA):
+        time.sleep(Config.MONITORING_TIMEFRAME_INIT)
+        _cpu, _mem, _disk = monitoring_resource()
+        write_file(_cpu, _mem, _disk)
+        print(str(index) + ": CPU:" + str(_cpu) + " MEM:" + str(_mem) + " DISK:" + str(_disk))
+
+def creationDataset():
+    _cpu, _mem, _disk = monitoring_resource()
+    for index in range(1, Config.NUM_TRAINING_DATA):
+        time.sleep(Config.MONITORING_TIMEFRAME_INIT)
+        _cpu_new, _mem_new, _disk_new = monitoring_resource()
+        write_file(_cpu_new, _mem, _disk)
+        print(str(index) + ": CPU:" + str(_cpu_new) + " MEM:" + str(_mem) + " DISK:" + str(_disk_new))
 
 class myThread_Monitoring(threading.Thread):
     node = Node(nid=uuid.uuid4())
@@ -42,8 +53,8 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            _cpu = 10.0
-            _mem = 15.1
+            #_cpu = 70.0
+            #_mem = 85.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
                 self.node.delta = Config.DELTA_SHARED
@@ -68,7 +79,7 @@ class myThread_Monitoring(threading.Thread):
                     self.node.delta = response['delta']
                     print("New estimation from coordinator - delta:" + str(self.node.delta))
                 self.node.vLast = self.node.v
-            elif functionValue < 0: #(-self.node.threshold):
+            elif functionValue < (-self.node.threshold):
                 print("Found a local violation on the monitored resources - SCALE DOWN")
                 print("Found a local violation on the monitored resources - SCALE UP")
                 response = Messages.send("scale_down", v=self.node.v, u=self.node.u) #communication to cloud

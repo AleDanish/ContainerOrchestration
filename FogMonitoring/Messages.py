@@ -10,7 +10,7 @@ def send(mode, filename=None, mac=None, v=None, u=None, coeff=None):
         cmd+=" -F file=@"+filename
     elif mac is not None:
         cmd+=" -F mac="+mac
-    elif (v is not None) and (u is not None) and (coeff is not None) :
+    elif (v is not None) and (u is not None):
         cmd += " -F v0=" + str(v[0]) + " -F v1=" + str(v[1]) + " -F v2=" + str(v[2])
         cmd += " -F u0=" + str(u[0]) + " -F u1=" + str(u[1]) + " -F u2=" + str(u[2])
     if coeff is not None:
