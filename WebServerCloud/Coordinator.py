@@ -63,7 +63,7 @@ class Coordinator():
                     values.append([i, self.e])
                 
                 self.balancingSet.clear()
-                return values, "global_violation"
+                return values, "violation"
     def balance_down(self):
         sumU=[0,0,0]
         sumW=0

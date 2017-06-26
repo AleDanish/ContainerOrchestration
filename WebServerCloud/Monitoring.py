@@ -37,7 +37,7 @@ def calculateCoefficientFunction(file):
     print('Function output: lst_sqrs_output = %r' % (lst_sqrs_output,))
     return coeff, data
 
-def initialization_monitoring(coordinator, hostname_request, file):
+def initialization_monitoring(coordinator, file):
     coeff, data = calculateCoefficientFunction(file)
     coordinator.setMonitoringFunction(Config.MONITORING_FUNCTION)
     coordinator.e = 0
@@ -48,7 +48,7 @@ def initialization_monitoring(coordinator, hostname_request, file):
     w = 1
     dat = [V,w] #v=0, w=1
     sumW = 1
-    estimation = coordinator.init_estimation(dat,hostname_request, sumW)
+    estimation = coordinator.init_estimation(dat, sumW)
     return coeff, estimation
 
 def application_monitoring(coordinator, hostname_request, nodes):

@@ -7,6 +7,8 @@ import Swarm_Management
 import Deploy
 import subprocess
 import ast
+import numpy as np
+import MQTTClient
 
 #curl -d hostname=alessandro-VirtualBox -d mode=mobile_presence -d mac= http://10.101.101.119:8888 #192.168.56.101
 
@@ -58,7 +60,7 @@ class MainHandler(tornado.web.RequestHandler):
         if mode =="init":
             try:
                 file_monitoring_setup= self.request.files['file'][0]['body'].decode("utf-8")
-                coeff, estimation = Monitoring.initialization_monitoring(coordinator, hostname_request, file_monitoring_setup)
+                coeff, estimation = Monitoring.initialization_monitoring(coordinator, file_monitoring_setup)
                 response = {'e' : estimation.tolist(), 'threshold': Config.THRESHOLD_DEFAULT, 'coeff' : coeff.tolist()}
                 print("Estimation vector: " + str(response['e']) + " - threshold: " + str(response['threshold']) + " - coeff: " + str(response['coeff']))
                 self.write(json.dumps(response))
@@ -82,7 +84,7 @@ class MainHandler(tornado.web.RequestHandler):
             U=[u0,u1,u2]
             coeff=[coeff0, coeff1, coeff2]
             coordinator.coeff = coeff
-            
+
             # create the balancing set and the nodes list 
             nodes={}
             coordinator.balancingSet = []
@@ -95,9 +97,18 @@ class MainHandler(tornado.web.RequestHandler):
                     if hostname != hostname_request:
                         hostname_receiver = hostname
                         break
-                
+
                 Deploy.scale_node(hostname_request, hostname_receiver, mode)
-                
+
+                #move arduino to another position
+                try:
+                    client = MQTTClient(Config.MQTT_IP, Config.MQTT_CLIENT_NAME)
+                    client.connect()
+                    client.publish(Config.MQTT_TOPIC, Config.MQTT_MESSAGE)
+                    client.disconnect()
+                except:
+                    print("Error to connect to MQTT broker")
+
                 new_node = False
                 for label in Swarm_Management.get_node_labels(hostname_request):
                     if label == hostname_request:
@@ -124,7 +135,7 @@ class MainHandler(tornado.web.RequestHandler):
                 
             for element in value:
                 if element[0] == hostname_request:
-                    if message == "global_violation":
+                    if message == "violation":
                         value = {'e' : element[1].tolist()}
                     elif message == "balanced":
                         value = {'delta' : element[1].tolist()}
@@ -159,14 +170,17 @@ class MainHandler(tornado.web.RequestHandler):
                     balancingSet.append([label, V_node, U_node])
 
             Deploy.delete_node(hostname_request, mode)
-            
+
             for element in balancingSet:
-                w=nodes[0][0]
-                dat = [V,w]
+                if element[0] == hostname_request:
+                    V = V_node
+                else:
+                    V = np.array(element[1])
+                w=nodes[element[0]]
                 sumW = w
-                estimation = coordinator.init_estimation(dat,hostname_request, sumW)
+                estimation = (w*V)/sumW
                 ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
-                send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
+                send_message_noresp("violation", ip_receiver, estimation[0], estimation[1], estimation[2])
 
     def get(self):
         print("Arrived request without arguments")

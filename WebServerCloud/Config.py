@@ -15,3 +15,11 @@ WEB_SERVER_FOG_PORT = 8888
 
 MONITORING_FILE = "dataset.txt"
 NUM_SAMPLE = 20
+
+'''
+    MQTT
+'''
+MQTT_IP = "172.17.0.1"
+MQTT_CLIENT_NAME = "coordinator"
+MQTT_TOPIC = "orchestration/scale"
+MQTT_MESSAGE = "move"
