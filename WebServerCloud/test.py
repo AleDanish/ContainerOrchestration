@@ -12,7 +12,6 @@ import MQTTClient
 
 #curl -d hostname=alessandro-VirtualBox -d mode=mobile_presence -d mac= http://10.101.101.119:8888 #192.168.56.101
 
-#NODES_WEIGTH_MAP = {'alessandro-VirtualBox2':1, 'alessandro-VirtualBox3':1}
 nodes={}
 coordinator=Coordinator(threshold=Config.THRESHOLD_DEFAULT)
 
@@ -88,9 +87,9 @@ class MainHandler(tornado.web.RequestHandler):
             # create the balancing set and the nodes list 
             nodes={}
             coordinator.balancingSet = []
-            message = "global_violation"
+            message = "violation"
             new_node = True
-            while message == "global_violation":
+            while message == "violation":
                 drain_list = Swarm_Management.get_swarm_node_list("Drain")
                 hostname_receiver = ""
                 for hostname in drain_list:
@@ -189,7 +188,7 @@ def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
 if __name__ == "__main__":
-    #initialization_nodes()
+    initialization_nodes()
     app = make_app()
     app.listen(Config.WEB_SERVER_PORT)
     print("WebServer listening on port " + str(Config.WEB_SERVER_PORT))
