@@ -6,11 +6,11 @@ services:
     - "27017:27017"
     deploy:
        mode: replicated
-       replicas: 1
+       replicas: 2
        restart_policy:
          condition: none
        placement:
-         constraints: [node.labels.alessandro-VirtualBox2==true]
+         constraints: [node.labels.raspberrypi2==true]
 
   mosquitto:
     image: alez/mosquitto-raspi@sha256:74cf253803b484a12b8db2a1744f51f2768eeae68da4c363613d91946495497d
@@ -18,20 +18,20 @@ services:
     - "1883:1883"
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
       restart_policy:
          condition: none
       placement:
-        constraints: [node.labels.alessandro-VirtualBox2==true]
+        constraints: [node.labels.raspberrypi2==true]
 
   test-app:
     image: alez/test-app-raspi:3
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
       restart_policy:
          condition: on-failure
          delay: 20s
          max_attempts: 3
       placement:
-        constraints: [node.labels.alessandro-VirtualBox2==true]
+        constraints: [node.labels.raspberrypi2==true]

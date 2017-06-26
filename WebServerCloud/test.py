@@ -68,7 +68,7 @@ class MainHandler(tornado.web.RequestHandler):
         elif mode == "mobile_presence":
             mac_new_device = arguments["mac"][0].decode("utf-8") #Arduino MAC address
             Deploy.new_node(hostname_request, mac_new_device, mode)
-            
+
         elif mode == "scale_up":
             v0 = float(arguments["v0"][0].decode("utf-8"))
             v1 = float(arguments["v1"][0].decode("utf-8"))
@@ -84,7 +84,7 @@ class MainHandler(tornado.web.RequestHandler):
             coeff=[coeff0, coeff1, coeff2]
             coordinator.coeff = coeff
 
-            # create the balancing set and the nodes list 
+            # create the balancing set and the nodes list
             nodes={}
             coordinator.balancingSet = []
             message = "violation"
@@ -126,12 +126,12 @@ class MainHandler(tornado.web.RequestHandler):
                             V_node = response["v"]
                             U_node = response["u"]
                             coordinator.balancingSet.append([label, V_node, U_node])
-                
+
                 if  new_node == False: # no node available for the balancing process
                     break
 
                 value, message = Monitoring.application_monitoring(coordinator, hostname_request, nodes)
-                
+
             for element in value:
                 if element[0] == hostname_request:
                     if message == "violation":
@@ -153,7 +153,7 @@ class MainHandler(tornado.web.RequestHandler):
             u2 = float(arguments["u2"][0].decode("utf-8"))
             V=[v0,v1,v2]
             U=[u0,u1,u2]
-            
+
             nodes={}
             balancingSet = []
             new_node = False
@@ -183,7 +183,7 @@ class MainHandler(tornado.web.RequestHandler):
 
     def get(self):
         print("Arrived request without arguments")
-        
+
 def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
