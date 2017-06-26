@@ -41,9 +41,7 @@ def initialization_monitoring(coordinator, hostname_request, file):
     coeff, data = calculateCoefficientFunction(file)
     coordinator.setMonitoringFunction(Config.MONITORING_FUNCTION)
     coordinator.coeff=coeff
-    #nodes[hostname_request]=1
     coordinator.e = 0
-    #coordinator.setNodes(nodes)
     x_mean = np.mean(data[:,(0)])
     y_mean = np.mean(data[:,(1)])
     z_mean = np.mean(data[:,(2)])

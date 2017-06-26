@@ -36,8 +36,8 @@ def send_message(mode, ip_hostname_receiver):
         else:
             return ast.literal_eval(line)
 
-def send_message_noresp(mode, ip_hostname_receiver, delta0, delta1, delta2):
-    cmd="curl http://" + ip_hostname_receiver + ":" + str(Config.WEB_SERVER_FOG_PORT) + " -F mode=" + mode + " -F delta0=" + str(delta0) + " -F delta1=" + str(delta1) + " -F delta2=" + str(delta2)
+def send_message_noresp(mode, ip_hostname_receiver, value0, value1, value2):
+    cmd="curl http://" + ip_hostname_receiver + ":" + str(Config.WEB_SERVER_FOG_PORT) + " -F mode=" + mode + " -F value0=" + str(value0) + " -F value1=" + str(value1) + " -F value2=" + str(value2)
     subprocess.Popen(cmd, shell=True)
 
 def initialization_nodes():
@@ -119,13 +119,16 @@ class MainHandler(tornado.web.RequestHandler):
                     
                 value, message = Monitoring.application_monitoring(coordinator, hostname_request, nodes)
                 
-            if message == "balanced":
-                for element in value:
-                    send_message_noresp("balance", ip_hostname, element[1][0], element[1][1], element[1][2])
-            elif message == "global_violation":
-                estimation = {'e' : estimation.tolist()}
-                self.write(json.dumps(estimation))
-                
+            for element in value:
+                if element[0] == hostname_request:
+                    if message == "global_violation":
+                        value = {'e' : element[1].tolist()}
+                    elif message == "balance":
+                        value = {'delta' : element[1].tolist()}
+                    self.write(json.dumps(value))
+                else:
+                    send_message_noresp(message, ip_hostname, element[1][0], element[1][1], element[1][2])
+
         elif mode == "scale_down":
             print("Scale down")
             mac_new_device = None

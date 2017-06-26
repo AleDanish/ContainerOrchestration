@@ -6,7 +6,7 @@ APP_NAME = "app"
 MODE = {'mobile_presence':'MOBILE_PRESENCE', 'scale_up':'SCALE_UP', 'scale_down':'SCALE_DOWN' }
 DEVICE_HOSTNAME_MAP = {}
 
-THRESHOLD_DEFAULT=3
+THRESHOLD_DEFAULT=10
 #defMonFunc= lambda x: x**2
 MONITORING_FUNCTION=lambda coeff,data:coeff[0]*data[0]+coeff[1]*data[1]+coeff[2]-data[2]#ax+by+c-z
 

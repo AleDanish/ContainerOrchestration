@@ -87,7 +87,9 @@ class Coordinator():
             for index in range(0,3):
                 sumU[index]+=U[index]*self.nodes[i]
             sumW+=self.nodes[i]
+            disk = U[2]
         b = np.array(sumU)/sumW
+        b[2] = disk
 
         #DBG
         if len(self.balancingSet)==1:
@@ -100,31 +102,17 @@ class Coordinator():
         print("Coord: balance vector is: " + "".join(str(x)+" " for x in b) + ", f(b)= %f, threshold is %f"%(valueMonitoring,self.threshold))
         
         if valueMonitoring < self.threshold:
-            #----------------------------------------------------------------
             #SUCESSfull balancing
-            #----------------------------------------------------------------
             dDelta=[]
-            #nodeIds=[]
             for (i,v,u) in self.balancingSet:
                 dDelta.append([i, self.nodes[i]*b-self.nodes[i]*u])
-                #nodeIds.append(i)
             
             self.balancingSet.clear()
             print("Balance successfull")
             print("dDelta:" + str(dDelta))
             return dDelta, "balanced"
         else:
-            #-----------------------------------------------------------------
-            #FAILed balancing or only 1 node
-            #-----------------------------------------------------------------
-            #diffSet=set(self.nodes.keys())-set(i for i,v,u in self.balancingSet) #check if other nodes (that belong to the same cluster) are available 
-            
-            #if len(diffSet): #i.e. len(balancingSet)!=len(nodes)
-            #    reqNodeId=random.sample(diffSet,1)[0]   #request new node data at random
-                #Deploy new node
-            
-            #else:
-                # 1 Node - Global Violation
+            #Failed balancing
                 sumV=[0,0,0]
                 sumU=[0,0,0]
                 for i,V,U in self.balancingSet:
@@ -136,7 +124,10 @@ class Coordinator():
                 print("Coord: GLOBAL VIOLATION:v="  + str(vGl) + ",u=" + str(uGl) + " ,f(v)=%f"%(self.monitoringFunction(self.coeff, vGl)))
                 
                 self.e=vGl
+                values=[]
+                for (i,v,u) in self.balancingSet:
+                    values.append([i, self.e])
                 
                 self.balancingSet.clear()
-                return self.e, "global_violation"
+                return values, "global_violation"
             
