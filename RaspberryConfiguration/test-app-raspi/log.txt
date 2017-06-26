@@ -1,0 +1,2 @@
+Subscribed to topic /test/fogorchestration
+MQTT broker listening on port 1883 
