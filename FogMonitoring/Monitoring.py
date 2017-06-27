@@ -44,10 +44,10 @@ class myThread_Monitoring(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.node.threshold = threshold
-        self.node.coeff = coeff
-        self.node.e = e
-        self.node.vLast = vLast
+        self.threshold = threshold
+        self.coeff = coeff
+        self.e = e
+        self.vLast = vLast
     def calculate_u(self, vector):
         self.v=vector
         self.u=[(e_i+v_i-vLast_i)+(d_i/self.weight) for e_i,v_i,vLast_i,d_i in zip(self.e,self.v,self.vLast,self.delta)]
@@ -59,18 +59,18 @@ class myThread_Monitoring(threading.Thread):
             _mem = 85.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
-                self.node.delta = Config.DELTA_SHARED
+                self.delta = Config.DELTA_SHARED
                 Config.DELTA_SHARED = 0
             elif Config.E_SHARED != 0:
-                self.node.e = Config.E_SHARED
+                self.e = Config.E_SHARED
                 Config.E_SHARED = 0
-                self.node.delta = [0,0,0]
+                self.delta = [0,0,0]
             self.calculate_u([_cpu, _mem, _disk])
-            Config.U_SHARED = self.node.u
-            Config.V_SHARED = self.node.v
-            print("Node " + str(self.node.id) + " reporting u: " + str(self.node.u))
-            functionValue = self.node.monitoringFunction(self.node.coeff, self.node.u)
-            if functionValue > self.node.threshold:
+            Config.U_SHARED = self.u
+            Config.V_SHARED = self.v
+            print("Node " + str(self.id) + " reporting u: " + str(self.u))
+            functionValue = Config.monitoringFunction(self.coeff, self.u)
+            if functionValue > self.threshold:
                 print("Found a local violation on the monitored resources - SCALE UP")
                 try:
                     #move arduino to another position
@@ -80,18 +80,18 @@ class myThread_Monitoring(threading.Thread):
                     client.disconnect()
                 except:
                     print("Error to connect to MQTT broker")
-                response = Messages.send("scale_up", v=self.node.v, u=self.node.u, coeff=self.node.coeff) #communication to cloud
+                response = Messages.send("scale_up", v=self.v, u=self.u, coeff=self.coeff) #communication to cloud
                 try:
-                    self.node.e = response["e"]
-                    self.node.delta = [0,0,0]
-                    print("New estimation from coordinator - e:" + str(self.node.e))
+                    self.e = response["e"]
+                    self.delta = [0,0,0]
+                    print("New estimation from coordinator - e:" + str(self.e))
                 except KeyError:
-                    self.node.delta = response['delta']
-                    print("New estimation from coordinator - delta:" + str(self.node.delta))
-                self.node.vLast = self.node.v
-            elif functionValue < (-self.node.threshold):
+                    self.delta = response['delta']
+                    print("New estimation from coordinator - delta:" + str(self.delta))
+                self.vLast = self.v
+            elif functionValue < (-self.threshold):
                 print("Found a local violation on the monitored resources - SCALE DOWN")
                 print("Found a local violation on the monitored resources - SCALE UP")
-                Messages.send_noresp("scale_down", v=self.node.v, u=self.node.u) #communication to cloud
-                self.node.vLast = self.node.v
+                Messages.send_noresp("scale_down", v=self.v, u=self.u) #communication to cloud
+                self.vLast = self.v
             time.sleep(Config.MONITORING_TIMEFRAME)
