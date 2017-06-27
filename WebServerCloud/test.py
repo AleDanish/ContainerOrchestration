@@ -1,6 +1,5 @@
 import tornado.web
 import Monitoring
-from Coordinator import Coordinator
 import json
 import Config
 import Swarm_Management
@@ -8,12 +7,8 @@ import Deploy
 import subprocess
 import ast
 import numpy as np
-import MQTTClient
 
 #curl -d hostname=alessandro-VirtualBox -d mode=mobile_presence -d mac= http://10.101.101.119:8888 #192.168.56.101
-
-nodes={}
-coordinator=Coordinator(threshold=Config.THRESHOLD_DEFAULT)
 
 def send_message_write_file(ip_hostname_receiver):
     cmd="curl http://" + ip_hostname_receiver + ":" + str(Config.WEB_SERVER_FOG_PORT)
@@ -50,6 +45,16 @@ def initialization_nodes():
         Swarm_Management.delete_labels_from_node(hostname)
         print("Hostname " + hostname + " set to Drain with empty Labels")
 
+def update_balancingSet(hostname_receiver, nodes, balancingSet):
+    weigth = 1
+    nodes[hostname_receiver]=weigth
+    ip_hostname = Config.MAP_HOSTNAME_IP[hostname_receiver]
+    response = send_message("info", ip_hostname)
+    V = response["v"]
+    U = response["u"]
+    balancingSet.append([hostname_receiver, V, U])
+    return balancingSet
+
 class MainHandler(tornado.web.RequestHandler):
     def post(self):
         arguments = self.request.arguments
@@ -59,7 +64,7 @@ class MainHandler(tornado.web.RequestHandler):
         if mode =="init":
             try:
                 file_monitoring_setup= self.request.files['file'][0]['body'].decode("utf-8")
-                coeff, estimation = Monitoring.initialization_monitoring(coordinator, file_monitoring_setup)
+                coeff, estimation = Monitoring.initialization_monitoring(file_monitoring_setup)
                 response = {'e' : estimation.tolist(), 'threshold': Config.THRESHOLD_DEFAULT, 'coeff' : coeff.tolist()}
                 print("Estimation vector: " + str(response['e']) + " - threshold: " + str(response['threshold']) + " - coeff: " + str(response['coeff']))
                 self.write(json.dumps(response))
@@ -79,73 +84,66 @@ class MainHandler(tornado.web.RequestHandler):
             coeff0 = float(arguments["coeff0"][0].decode("utf-8"))
             coeff1 = float(arguments["coeff1"][0].decode("utf-8"))
             coeff2 = float(arguments["coeff2"][0].decode("utf-8"))
-            V=[v0,v1,v2]
-            U=[u0,u1,u2]
+            V_node=[v0,v1,v2]
+            U_node=[u0,u1,u2]
             coeff=[coeff0, coeff1, coeff2]
-            coordinator.coeff = coeff
 
-            # create the balancing set and the nodes list
             nodes={}
-            coordinator.balancingSet = []
-            message = "violation"
-            new_node = True
-            while message == "violation":
-                drain_list = Swarm_Management.get_swarm_node_list("Drain")
-                hostname_receiver = ""
-                for hostname in drain_list:
-                    if hostname != hostname_request:
-                        hostname_receiver = hostname
-                        break
-
-                Deploy.scale_node(hostname_request, hostname_receiver, mode)
-
-                #move arduino to another position
-                try:
-                    ip_mqtt = Config.MAP_HOSTNAME_IP[hostname_request]
-                    client = MQTTClient(ip_mqtt, Config.MQTT_CLIENT_NAME)
-                    client.connect()
-                    print("Connected to the MQTT broker on IP:" + ip_mqtt)
-                    client.publish(Config.MQTT_TOPIC, Config.MQTT_MESSAGE)
-                    print("Pubblished on TOPIC:"+ Config.MQTT_TOPIC + " the MESSAGE:" + Config.MQTT_MESSAGE)
-                    client.disconnect()
-                    print("Disconnected from MQTT broker")
-                except:
-                    print("Error to connect to MQTT broker")
-
-                new_node = False
-                for label in Swarm_Management.get_node_labels(hostname_request):
-                    if label == hostname_request:
-                        weigth = 1
-                        nodes[label]=weigth
-                        coordinator.balancingSet.append([hostname_request, V, U])
-                    else:
-                        try:
-                            nodes[label] #if new -> catch exception
-                        except KeyError:
-                            new_node = True
-                            weigth = 1
-                            nodes[label]=weigth
-                            ip_hostname = Config.MAP_HOSTNAME_IP[label]
-                            response = send_message("info", ip_hostname)
-                            V_node = response["v"]
-                            U_node = response["u"]
-                            coordinator.balancingSet.append([label, V_node, U_node])
-
-                if  new_node == False: # no node available for the balancing process
-                    break
-
-                value, message = Monitoring.application_monitoring(coordinator, hostname_request, nodes)
-
-            for element in value:
-                if element[0] == hostname_request:
-                    if message == "violation":
-                        value = {'e' : element[1].tolist()}
-                    elif message == "balanced":
-                        value = {'delta' : element[1].tolist()}
-                    self.write(json.dumps(value))
+            balancingSet = []
+            labels = Swarm_Management.get_node_labels(hostname_request)
+            for label in labels:
+                if label == hostname_request:
+                    weigth = 1
+                    nodes[label]=weigth
+                    balancingSet.append([hostname_request, V_node, U_node])
                 else:
-                    ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
-                    send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
+                    balancingSet = update_balancingSet(label, nodes, balancingSet)
+            if len(labels) == 1:
+                print(str(len(nodes)) + " node -> global violation.")
+                hostaname_receiver = Deploy.scale_node(hostname_request, mode)
+                if hostaname_receiver == "":
+                    print("No suitable node to extend the cluster")
+                else:
+                    print("Deployed containers on " + hostaname_receiver)
+                    update_balancingSet(hostaname_receiver, nodes, balancingSet)
+                    for i,V,U in balancingSet:  # @UnusedVariable
+                        w=nodes[i]
+                        sumW = w
+                        e = Monitoring.estimation(V, w, sumW)
+                        if i == hostname_request:
+                            value = {'e' : e.tolist()}
+                            self.write(json.dumps(value))
+                        else:
+                            ip_receiver = Config.MAP_HOSTNAME_IP[i]
+                            send_message_noresp("violation", ip_receiver, e[0], e[1], e[2])
+            elif len(labels) > 1:
+                b = Monitoring.calculate_balance(balancingSet, nodes)
+                valueMonitoring = Config.MONITORING_FUNCTION(coeff, b)
+                print("Coord: balance vector is: " + "".join(str(x)+" " for x in b) + ", f(b)= %f, threshold is %f"%(valueMonitoring, Config.THRESHOLD_DEFAULT))
+                if valueMonitoring < Config.THRESHOLD_DEFAULT:
+                    print("Balancing successful")
+                    message = "balanced"
+                    value = Monitoring.calculate_delta(balancingSet, nodes, b)
+                else:
+                    print("Balancing failed")
+                    hostaname_receiver = Deploy.scale_node(hostname_request, mode)
+                    if hostaname_receiver == "":
+                        print("No suitable node to extend the cluster")
+                    else:
+                        print("Deployed containers on " + hostaname_receiver)
+                        update_balancingSet(hostaname_receiver, nodes, balancingSet)
+                        message = "violation"
+                        value = Monitoring.calculate_e(balancingSet, nodes, coeff)
+                for element in value:
+                    if element[0] == hostname_request:
+                        if message == "violation":
+                            value = {'e' : element[1].tolist()}
+                        elif message == "balanced":
+                            value = {'delta' : element[1].tolist()}
+                        self.write(json.dumps(value))
+                    else:
+                        ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
+                        send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
 
         elif mode == "scale_down":
             print("Scale down")
@@ -155,35 +153,31 @@ class MainHandler(tornado.web.RequestHandler):
             u0 = float(arguments["u0"][0].decode("utf-8"))
             u1 = float(arguments["u1"][0].decode("utf-8"))
             u2 = float(arguments["u2"][0].decode("utf-8"))
-            V=[v0,v1,v2]
-            U=[u0,u1,u2]
+            V_node=[v0,v1,v2]
+            U_node=[u0,u1,u2]
 
             nodes={}
             balancingSet = []
-            new_node = False
-            for label in Swarm_Management.get_node_labels(hostname_request):
-                if label != hostname_request:
-                    new_node = True
-                    weigth = 1
-                    nodes[label]=weigth
-                    ip_hostname = Config.MAP_HOSTNAME_IP[label]
-                    response = send_message("info", ip_hostname)
-                    V_node = response["v"]
-                    U_node = response["u"]
-                    balancingSet.append([label, V_node, U_node])
+            labels = Swarm_Management.get_node_labels(hostname_request)
+            if len(labels) <= 1:
+                print("Cannot scale down. Only 1 node into the cluster")
+            else:
+                for label in labels:
+                    if label != hostname_request:
+                        balancingSet = update_balancingSet(label, nodes, balancingSet)
 
-            Deploy.delete_node(hostname_request, mode)
+                Deploy.delete_node(hostname_request, mode)
 
-            for element in balancingSet:
-                if element[0] == hostname_request:
-                    V = V_node
-                else:
-                    V = np.array(element[1])
-                w=nodes[element[0]]
-                sumW = w
-                estimation = (w*V)/sumW
-                ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
-                send_message_noresp("violation", ip_receiver, estimation[0], estimation[1], estimation[2])
+                for element in balancingSet:
+                    if element[0] == hostname_request:
+                        V = V_node
+                    else:
+                        V = np.array(element[1])
+                    w=nodes[element[0]]
+                    sumW = w
+                    estimation = Monitoring.estimation(V, w, sumW)
+                    ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
+                    send_message_noresp("violation", ip_receiver, estimation[0], estimation[1], estimation[2])
 
     def get(self):
         print("Arrived request without arguments")

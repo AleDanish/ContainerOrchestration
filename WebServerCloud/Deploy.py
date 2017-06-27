@@ -30,7 +30,7 @@ def edit_deploy_settings_replicas(replicas_num):
             print(line)
     fileinput.close()
 
-def edit_deploy_settings_mode(mode):    
+def edit_deploy_settings_mode(mode):
     for line in fileinput.input(docker_compose_file, inplace=True):
         line = line.replace("\n","")
         if " mode:" in line:
@@ -39,7 +39,7 @@ def edit_deploy_settings_mode(mode):
         else:
             print(line)
     fileinput.close()
-    
+
 def edit_deploy_settings_node_labes(label_key, label_value):
     for line in fileinput.input(docker_compose_file, inplace=True):
         line = line.replace("\n","")
@@ -70,11 +70,16 @@ def new_node(hostname_request, mac_new_device, mode):
         Swarm_Management.create_services(Config.APP_NAME)
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
-        
     drain_node(hostname_to_drain, mode)
 
-def scale_node(hostname_requesting, hostname_receiver, mode):
-    #update the node into the cluster
+def scale_node(hostname_requesting, mode):
+    drain_list = Swarm_Management.get_swarm_node_list("Drain")
+    hostname_receiver = ""
+    for hostname in drain_list:
+        if hostname != hostname_requesting:
+            hostname_receiver = hostname
+            break
+
     cluster_nodes = Swarm_Management.get_node_labels(hostname_requesting)
     label_key_receiver = hostname_receiver
     label_value_receiver = "true"
@@ -89,12 +94,12 @@ def scale_node(hostname_requesting, hostname_receiver, mode):
         label_value_receiver = "true"
         Swarm_Management.add_label_to_node(hostname_receiver, label_key_receiver, label_value_receiver)
         print("Added receiver Label " + label_key_receiver + ":" + label_value_receiver + " to hostname " + hostname_receiver + " for future possible usage")
-    
+
     replicas_num = len(cluster_nodes) + 1
     edit_deploy_settings_replicas(replicas_num)
     edit_deploy_settings_node_labes(hostname_requesting, "true") #hostname receiver or requesting is the same
     print("SCALE UP mode - Docker compose settings file modified for the hostname " + hostname_receiver)
-    
+
     if hostname_receiver is not "":
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
@@ -102,11 +107,9 @@ def scale_node(hostname_requesting, hostname_receiver, mode):
         Swarm_Management.create_services(Config.APP_NAME)
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
-    
+    return hostname_receiver
+
 def delete_node(hostname_requesting, mode):
-    
-    #
-        
     cluster_nodes = Swarm_Management.get_node_labels(hostname_requesting)
     cluster_nodes = [node for node in cluster_nodes if node != hostname_requesting]
     if len(cluster_nodes) <= 0:
@@ -118,13 +121,13 @@ def delete_node(hostname_requesting, mode):
         for node in cluster_nodes:
             Swarm_Management.remove_label_from_node(node, hostname_requesting)
         print("Removed Label about the requesting hostname " + hostname_requesting + " from all the node of the cluster")
-        
+
         replicas_num = len(cluster_nodes)
         edit_deploy_settings_replicas(replicas_num)
         hostname_receiver = cluster_nodes[0] # node of the cluster to re-deploy the service
         edit_deploy_settings_node_labes(hostname_receiver, "true")
         print("SCALE DOWN mode - Docker compose settings file modified for the hostname " + hostname_receiver)
-    
+
     if hostname_receiver is not "":
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
@@ -132,15 +135,13 @@ def delete_node(hostname_requesting, mode):
         Swarm_Management.create_services(Config.APP_NAME)
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
-    
+
     hostname_to_drain = hostname_requesting
     drain_node(hostname_to_drain, mode)
-        
+
 def drain_node(hostname_to_drain, mode):
     if hostname_to_drain is not "":
         node_id_to_drain = Swarm_Management.id_from_hostname(hostname_to_drain)
         Swarm_Management.set_availability_node(node_id_to_drain, "drain") #swarm will create a new id for the host -> the id found is no longer used
         Swarm_Management.delete_labels_from_node(hostname_to_drain)
         print(Config.MODE[mode] + " mode - Drain node with ip " + node_id_to_drain + " and cleared Labels")
-    
-    
