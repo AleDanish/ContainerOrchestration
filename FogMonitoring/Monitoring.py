@@ -4,8 +4,6 @@
 import threading
 import psutil
 import time
-from Node import Node
-import uuid
 import Messages
 import Config
 import MQTTClient
@@ -42,7 +40,6 @@ def creationDataset():
         print(str(index) + ": CPU:" + str(_cpu_new) + " MEM:" + str(_mem) + " DISK:" + str(_disk_new))
 
 class myThread_Monitoring(threading.Thread):
-    node = Node(nid=uuid.uuid4())
     def __init__(self, threadID, name, threshold, coeff, e, vLast):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -51,6 +48,10 @@ class myThread_Monitoring(threading.Thread):
         self.node.coeff = coeff
         self.node.e = e
         self.node.vLast = vLast
+    def calculate_u(self, vector):
+        self.v=vector
+        self.u=[(e_i+v_i-vLast_i)+(d_i/self.weight) for e_i,v_i,vLast_i,d_i in zip(self.e,self.v,self.vLast,self.delta)]
+        self.vLast=self.v
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
@@ -64,7 +65,7 @@ class myThread_Monitoring(threading.Thread):
                 self.node.e = Config.E_SHARED
                 Config.E_SHARED = 0
                 self.node.delta = [0,0,0]
-            self.node.run([_cpu, _mem, _disk])
+            self.calculate_u([_cpu, _mem, _disk])
             Config.U_SHARED = self.node.u
             Config.V_SHARED = self.node.v
             print("Node " + str(self.node.id) + " reporting u: " + str(self.node.u))

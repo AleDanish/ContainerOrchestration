@@ -34,8 +34,7 @@ class MainHandler(tornado.web.RequestHandler):
         arguments = self.request.arguments
         mode = arguments["mode"][0].decode("utf-8")
         if mode == "info":
-            #file = open(Config.MONITORING_FILE, 'r').read()
-            #self.write(file)
+            #self.write(open(Config.MONITORING_FILE, 'r').read())
             values = {'u':Config.U_SHARED, 'v':Config.V_SHARED}
             self.write(json.dumps(values))
         elif mode == "balanced":
