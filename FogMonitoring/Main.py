@@ -27,7 +27,7 @@ def initialization():
     thread1 = Monitoring.myThread_Monitoring(1, "Thread-Monitoring", threshold, coeff, e, vLast)
     thread2 = Hostapd.myThread_Hostapd(2, "Thread-Hostapd")
     thread1.start()
-    thread2.start()
+    #thread2.start()
 
 class MainHandler(tornado.web.RequestHandler):
     def post(self):

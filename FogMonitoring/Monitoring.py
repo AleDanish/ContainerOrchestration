@@ -8,6 +8,7 @@ from Node import Node
 import uuid
 import Messages
 import Config
+import MQTTClient
 
 _disk=psutil.disk_usage("/").percent
 
@@ -53,8 +54,8 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            #_cpu = 70.0
-            #_mem = 85.1
+            _cpu = 70.0
+            _mem = 85.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
                 self.node.delta = Config.DELTA_SHARED
@@ -70,8 +71,16 @@ class myThread_Monitoring(threading.Thread):
             functionValue = self.node.monitoringFunction(self.node.coeff, self.node.u)
             if functionValue > self.node.threshold:
                 print("Found a local violation on the monitored resources - SCALE UP")
+                try:
+                    #move arduino to another position
+                    client = MQTTClient(Config.MQTT_IP, Config.MQTT_CLIENT_NAME)
+                    client.connect()
+                    client.publish(Config.MQTT_TOPIC, Config.MQTT_MESSAGE)
+                    client.disconnect()
+                except:
+                    print("Error to connect to MQTT broker")
                 response = Messages.send("scale_up", v=self.node.v, u=self.node.u, coeff=self.node.coeff) #communication to cloud
-                try:    
+                try:
                     self.node.e = response["e"]
                     self.node.delta = [0,0,0]
                     print("New estimation from coordinator - e:" + str(self.node.e))
@@ -82,13 +91,6 @@ class myThread_Monitoring(threading.Thread):
             elif functionValue < (-self.node.threshold):
                 print("Found a local violation on the monitored resources - SCALE DOWN")
                 print("Found a local violation on the monitored resources - SCALE UP")
-                response = Messages.send("scale_down", v=self.node.v, u=self.node.u) #communication to cloud
-                try:
-                    self.node.e = response["e"]
-                    self.node.delta = [0,0,0]
-                    print("New estimation from coordinator - e:" + str(self.node.e))
-                except KeyError:
-                    self.node.delta = response['delta']
-                    print("New estimation from coordinator - delta:" + str(self.node.delta))
+                Messages.send_noresp("scale_down", v=self.node.v, u=self.node.u) #communication to cloud
                 self.node.vLast = self.node.v
             time.sleep(Config.MONITORING_TIMEFRAME)
