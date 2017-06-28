@@ -1,6 +1,7 @@
 import fileinput
 import Swarm_Management
 import Config
+import time
 
 docker_compose_file = "docker-compose.yml"
 
@@ -21,7 +22,7 @@ def get_replicas_number():
     f.close()
     return int(replicas_number)
 
-def edit_deploy_settings_replicas(replicas_num):    
+def edit_deploy_settings_replicas(replicas_num):
     for line in fileinput.input(docker_compose_file, inplace=True):
         line = line.replace("\n","")
         if " replicas:" in line:
@@ -67,7 +68,10 @@ def new_node(hostname_request, mac_new_device, mode):
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
         print(Config.MODE[mode] + " mode - Creating new services for the application " + Config.APP_NAME)
+        startDeployContainers = time.time()
         Swarm_Management.create_services(Config.APP_NAME)
+        timeDeployContainers = time.time() - startDeployContainers
+        print("Containers deployed in " + str(timeDeployContainers) + " s")
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
     drain_node(hostname_to_drain, mode)
@@ -80,31 +84,34 @@ def scale_node(hostname_requesting, mode):
             hostname_receiver = hostname
             break
 
-    cluster_nodes = Swarm_Management.get_node_labels(hostname_requesting)
-    label_key_receiver = hostname_receiver
-    label_value_receiver = "true"
-    Swarm_Management.add_label_to_node(hostname_receiver, label_key_receiver, label_value_receiver)
-    print("Added receiver Label " + label_key_receiver + ":" + label_value_receiver + " to hostname " + hostname_receiver + " for future possible usage")
-    for node in cluster_nodes:
-        label_key_requesting = hostname_receiver
-        label_value_requestig = "true"
-        Swarm_Management.add_label_to_node(node, label_key_requesting, label_value_requestig)
-        print("Added requesting Label " + label_key_requesting + ":" + label_value_requestig + " to hostname " + node + " to link the receiver node to the requesting hostname")
-        label_key_receiver = node
+    if hostname_receiver is not "":
+        cluster_nodes = Swarm_Management.get_node_labels(hostname_requesting)
+        label_key_receiver = hostname_receiver
         label_value_receiver = "true"
         Swarm_Management.add_label_to_node(hostname_receiver, label_key_receiver, label_value_receiver)
         print("Added receiver Label " + label_key_receiver + ":" + label_value_receiver + " to hostname " + hostname_receiver + " for future possible usage")
+        for node in cluster_nodes:
+            label_key_requesting = hostname_receiver
+            label_value_requestig = "true"
+            Swarm_Management.add_label_to_node(node, label_key_requesting, label_value_requestig)
+            print("Added requesting Label " + label_key_requesting + ":" + label_value_requestig + " to hostname " + node + " to link the receiver node to the requesting hostname")
+            label_key_receiver = node
+            label_value_receiver = "true"
+            Swarm_Management.add_label_to_node(hostname_receiver, label_key_receiver, label_value_receiver)
+            print("Added receiver Label " + label_key_receiver + ":" + label_value_receiver + " to hostname " + hostname_receiver + " for future possible usage")
 
-    replicas_num = len(cluster_nodes) + 1
-    edit_deploy_settings_replicas(replicas_num)
-    edit_deploy_settings_node_labes(hostname_requesting, "true") #hostname receiver or requesting is the same
-    print("SCALE UP mode - Docker compose settings file modified for the hostname " + hostname_receiver)
+        replicas_num = len(cluster_nodes) + 1
+        edit_deploy_settings_replicas(replicas_num)
+        edit_deploy_settings_node_labes(hostname_requesting, "true") #hostname receiver or requesting is the same
+        print("SCALE UP mode - Docker compose settings file modified for the hostname " + hostname_receiver)
 
-    if hostname_receiver is not "":
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
         print(Config.MODE[mode] + " mode - Creating new services for the application " + Config.APP_NAME)
+        startDeployContainers = time.time()
         Swarm_Management.create_services(Config.APP_NAME)
+        timeDeployContainers = time.time() - startDeployContainers
+        print("Containers deployed in " + str(timeDeployContainers) + " s")
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
     return hostname_receiver

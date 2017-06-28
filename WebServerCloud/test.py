@@ -88,6 +88,7 @@ class MainHandler(tornado.web.RequestHandler):
             U_node=[u0,u1,u2]
             coeff=[coeff0, coeff1, coeff2]
 
+            deploy = False
             nodes={}
             balancingSet = []
             labels = Swarm_Management.get_node_labels(hostname_request)
@@ -102,6 +103,7 @@ class MainHandler(tornado.web.RequestHandler):
                 print(str(len(nodes)) + " node -> global violation.")
                 hostaname_receiver = Deploy.scale_node(hostname_request, mode)
                 if hostaname_receiver == "":
+                    deploy = False
                     print("No suitable node to extend the cluster")
                 else:
                     print("Deployed containers on " + hostaname_receiver)
@@ -128,22 +130,24 @@ class MainHandler(tornado.web.RequestHandler):
                     print("Balancing failed")
                     hostaname_receiver = Deploy.scale_node(hostname_request, mode)
                     if hostaname_receiver == "":
+                        deploy = False
                         print("No suitable node to extend the cluster")
                     else:
                         print("Deployed containers on " + hostaname_receiver)
                         update_balancingSet(hostaname_receiver, nodes, balancingSet)
                         message = "violation"
                         value = Monitoring.calculate_e(balancingSet, nodes, coeff)
-                for element in value:
-                    if element[0] == hostname_request:
-                        if message == "violation":
-                            value = {'e' : element[1].tolist()}
-                        elif message == "balanced":
-                            value = {'delta' : element[1].tolist()}
-                        self.write(json.dumps(value))
-                    else:
-                        ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
-                        send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
+                if deploy == True:
+                    for element in value:
+                        if element[0] == hostname_request:
+                            if message == "violation":
+                                value = {'e' : element[1].tolist()}
+                            elif message == "balanced":
+                                value = {'delta' : element[1].tolist()}
+                            self.write(json.dumps(value))
+                        else:
+                            ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
+                            send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
 
         elif mode == "scale_down":
             print("Scale down")
@@ -186,7 +190,7 @@ def make_app():
     return tornado.web.Application([(r"/", MainHandler),])
 
 if __name__ == "__main__":
-    initialization_nodes()
+    #yinitialization_nodes()
     app = make_app()
     app.listen(Config.WEB_SERVER_PORT)
     print("WebServer listening on port " + str(Config.WEB_SERVER_PORT))
