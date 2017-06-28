@@ -3,26 +3,26 @@ services:
   mongo:
     image: alez/mongo-raspi@sha256:3d4bb588d0febbac0e78fad3a2f7775173f8e516171e59cbcf692feabd837ce6
     ports:
-    - "27017:27017"
+    - "127.0.0.1:27017:27017"
     deploy:
        mode: replicated
        replicas: 2
        restart_policy:
          condition: none
        placement:
-         constraints: [node.labels.raspberrypi2==true]
+         constraints: [node.labels.alessandro-VirtualBox2==true]
 
   mosquitto:
     image: alez/mosquitto-raspi@sha256:74cf253803b484a12b8db2a1744f51f2768eeae68da4c363613d91946495497d
     ports:
-    - "1883:1883"
+    - "127.0.0.1:1883:1883"
     deploy:
       mode: replicated
       replicas: 2
       restart_policy:
          condition: none
       placement:
-        constraints: [node.labels.raspberrypi2==true]
+        constraints: [node.labels.alessandro-VirtualBox2==true]
 
   test-app:
     image: alez/test-app-raspi:3
@@ -34,4 +34,4 @@ services:
          delay: 5s
          max_attempts: 3
       placement:
-        constraints: [node.labels.raspberrypi2==true]
+        constraints: [node.labels.alessandro-VirtualBox2==true]

@@ -13,10 +13,3 @@ THRESHOLD_DEFAULT=20
 #MAP_HOSTNAME_IP = {'alessandro-VirtualBox2':'192.168.56.102','alessandro-VirtualBox3':'192.168.56.103'}
 MAP_HOSTNAME_IP = {'raspberrypi1':'193.10.119.39','raspberrypi2':'193.10.119.38','raspberrypi3':'194.28.123.241'}
 MONITORING_FUNCTION=lambda coeff,data:coeff[0]*data[0]+coeff[1]*data[1]+coeff[2]-data[2]#ax+by+c-z
-
-
-''' MQTT '''
-#MQTT_IP = "172.17.0.1"
-MQTT_CLIENT_NAME = "coordinator"
-MQTT_TOPIC = "orchestration/scale"
-MQTT_MESSAGE = "move"
