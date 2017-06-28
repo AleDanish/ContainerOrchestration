@@ -59,8 +59,8 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            _cpu = 70.0
-            _mem = 85.1
+            _cpu = 40.0
+            _mem = 45.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
                 self.delta = Config.DELTA_SHARED
