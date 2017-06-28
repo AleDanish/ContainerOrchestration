@@ -48,6 +48,10 @@ class myThread_Monitoring(threading.Thread):
         self.coeff = coeff
         self.e = e
         self.vLast = vLast
+        self.delta = [0,0,0]
+        self.v = 0
+        self.u = 0
+        self.weight = 1
     def calculate_u(self, vector):
         self.v=vector
         self.u=[(e_i+v_i-vLast_i)+(d_i/self.weight) for e_i,v_i,vLast_i,d_i in zip(self.e,self.v,self.vLast,self.delta)]
@@ -55,8 +59,8 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            _cpu = 70.0
-            _mem = 85.1
+            #_cpu = 70.0
+            #_mem = 85.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
                 self.delta = Config.DELTA_SHARED
@@ -68,7 +72,7 @@ class myThread_Monitoring(threading.Thread):
             self.calculate_u([_cpu, _mem, _disk])
             Config.U_SHARED = self.u
             Config.V_SHARED = self.v
-            print("Node " + str(self.id) + " reporting u: " + str(self.u))
+            print("Node with reporting u: " + str(self.u))
             functionValue = Config.monitoringFunction(self.coeff, self.u)
             if functionValue > self.threshold:
                 print("Found a local violation on the monitored resources - SCALE UP")
