@@ -55,16 +55,16 @@ def new_node(hostname_request, mac_new_device, mode):
     hostname_receiver = hostname_request
     Config.DEVICE_HOSTNAME_MAP[mac_new_device] = hostname_receiver
 
-    label_key = hostname_receiver
-    label_value = "true"
-    Swarm_Management.add_label_to_node(hostname_receiver, label_key, label_value)
-    print("Added Label " + label_key + ":" + label_value + " to hostname " + hostname_receiver)
-    replicas_num = 1 #always 1
-    edit_deploy_settings_replicas(replicas_num)
-    edit_deploy_settings_node_labes(label_key, label_value)
-    print("MOBILE PRESENCE mode - Docker compose settings file modified for the hostname " + hostname_receiver)
-
     if hostname_receiver is not "":
+        label_key = hostname_receiver
+        label_value = "true"
+        Swarm_Management.add_label_to_node(hostname_receiver, label_key, label_value)
+        print("Added Label " + label_key + ":" + label_value + " to hostname " + hostname_receiver)
+        replicas_num = 1 #always 1
+        edit_deploy_settings_replicas(replicas_num)
+        edit_deploy_settings_node_labes(label_key, label_value)
+        print("MOBILE PRESENCE mode - Docker compose settings file modified for the hostname " + hostname_receiver)
+
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
         print(Config.MODE[mode] + " mode - Creating new services for the application " + Config.APP_NAME)

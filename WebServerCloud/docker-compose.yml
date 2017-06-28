@@ -10,7 +10,7 @@ services:
        restart_policy:
          condition: none
        placement:
-         constraints: [node.labels.raspberrypi3==true]
+         constraints: [node.labels.raspberrypi1==true]
 
   mosquitto:
     image: alez/mosquitto-raspi@sha256:74cf253803b484a12b8db2a1744f51f2768eeae68da4c363613d91946495497d
@@ -22,7 +22,7 @@ services:
       restart_policy:
          condition: none
       placement:
-        constraints: [node.labels.raspberrypi3==true]
+        constraints: [node.labels.raspberrypi1==true]
 
   test-app:
     image: alez/test-app-raspi:3
@@ -34,4 +34,4 @@ services:
          delay: 5s
          max_attempts: 3
       placement:
-        constraints: [node.labels.raspberrypi3==true]
+        constraints: [node.labels.raspberrypi1==true]

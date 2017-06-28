@@ -92,6 +92,8 @@ class MainHandler(tornado.web.RequestHandler):
             nodes={}
             balancingSet = []
             labels = Swarm_Management.get_node_labels(hostname_request)
+            print("LABELS:")
+            print(labels)
             for label in labels:
                 if label == hostname_request:
                     weigth = 1
