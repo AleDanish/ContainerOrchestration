@@ -50,6 +50,11 @@ def edit_deploy_settings_node_labes(label_key, label_value):
             print(line)
     fileinput.close()
 
+def write_log_file(data):
+    file = open('log.txt', 'a+')
+    file.write(data)
+    file.close()
+
 def new_node(hostname_request, mac_new_device, mode):
     hostname_to_drain = Config.DEVICE_HOSTNAME_MAP.get(mac_new_device, "")
     hostname_receiver = hostname_request
@@ -68,10 +73,11 @@ def new_node(hostname_request, mac_new_device, mode):
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
         print(Config.MODE[mode] + " mode - Creating new services for the application " + Config.APP_NAME)
-        startDeployContainers = time.time()
+        startDeployContainersNN = time.time()
         Swarm_Management.create_services(Config.APP_NAME)
-        timeDeployContainers = time.time() - startDeployContainers
-        print("Containers deployed in " + str(timeDeployContainers) + " s")
+        timeDeployContainersNN = time.time() - startDeployContainersNN
+        print(mode + " - Containers deployed in " + str(timeDeployContainersNN) + " s")
+        write_log_file(mode + " - Containers deployed in " + str(timeDeployContainersNN) + " s \n")
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
     drain_node(hostname_to_drain, mode)
@@ -108,10 +114,11 @@ def scale_node(hostname_requesting, mode):
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
         print(Config.MODE[mode] + " mode - Creating new services for the application " + Config.APP_NAME)
-        startDeployContainers = time.time()
+        startDeployContainersSU = time.time()
         Swarm_Management.create_services(Config.APP_NAME)
-        timeDeployContainers = time.time() - startDeployContainers
-        print("Containers deployed in " + str(timeDeployContainers) + " s")
+        timeDeployContainersSU = time.time() - startDeployContainersSU
+        print(mode + " - Containers deployed in " + str(timeDeployContainersSU) + " s")
+        write_log_file(mode + " - Containers deployed in " + str(timeDeployContainersSU) + " s \n")
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
     return hostname_receiver
@@ -139,7 +146,11 @@ def delete_node(hostname_requesting, mode):
         Swarm_Management.set_availability_node(hostname_receiver, "active") #deploy on the new node -> call the new node to join the swarm
         print(Config.MODE[mode] + " mode - Changed the node " + hostname_receiver + " availability to Active")
         print(Config.MODE[mode] + " mode - Creating new services for the application " + Config.APP_NAME)
+        startDeployContainersSD = time.time()
         Swarm_Management.create_services(Config.APP_NAME)
+        timeDeployContainersSD = time.time() - startDeployContainersSD
+        print(mode + " - Containers deployed in " + str(timeDeployContainersSD) + " s")
+        write_log_file(mode + " - Containers deployed in " + str(timeDeployContainersSD) + " s \n")
     else:
         print(Config.MODE[mode] + " no available node can help: all node busy")
 

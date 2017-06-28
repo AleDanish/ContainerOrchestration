@@ -1,0 +1,18 @@
+Total estimation time 0.02207660675048828 s 
+Total time for mobile presence 1.5952765941619873 s 
+Total estimation time 0.011820077896118164 s 
+Total estimation time 0.010314226150512695 s 
+mobile_presence - Containers deployed in 1.4785809516906738 s 
+Total time for mobile presence 1.5472335815429688 s 
+Total estimation time 0.009785652160644531 s 
+Total estimation time 0.022220373153686523 s 
+scale_up - Containers deployed in 1.6280419826507568 s 
+Total time to scale up the application 2.069899082183838 s 
+Total time to scale up the application 0.28972482681274414 s 
+Total time to scale up the application 0.28583288192749023 s 
+Total time to scale up the application 0.30323123931884766 s 
+Total time to scale up the application 0.2863306999206543 s 
+Total time to scale up the application 0.28905701637268066 s 
+Total estimation time 0.023998498916625977 s 
+Total estimation time 0.022164583206176758 s 
+scale_down - Containers deployed in 1.504265546798706 s 
