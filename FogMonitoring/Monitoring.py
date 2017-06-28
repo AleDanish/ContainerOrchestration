@@ -6,7 +6,7 @@ import psutil
 import time
 import Messages
 import Config
-from MQTTClient import MQTTClient
+import MQTTClient
 
 _disk=psutil.disk_usage("/").percent
 
