@@ -52,6 +52,7 @@ class myThread_Monitoring(threading.Thread):
         self.v = 0
         self.u = 0
         self.weight = 1
+        self.last_mode = ""
     def calculate_u(self, vector):
         self.v=vector
         self.u=[(e_i+v_i-vLast_i)+(d_i/self.weight) for e_i,v_i,vLast_i,d_i in zip(self.e,self.v,self.vLast,self.delta)]
@@ -59,7 +60,7 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            _cpu = 40.0
+            _cpu = 50.0
             _mem = 45.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
@@ -75,6 +76,7 @@ class myThread_Monitoring(threading.Thread):
             print("Node with reporting u: " + str(self.u))
             functionValue = Config.monitoringFunction(self.coeff, self.u)
             if functionValue > self.threshold:
+                self.last_mode = "scale_up"
                 print("Found a local violation on the monitored resources - SCALE UP")
                 try:
                     #move arduino to another position
@@ -96,8 +98,12 @@ class myThread_Monitoring(threading.Thread):
                     print("No node available")
                 self.vLast = self.v
             elif functionValue < (-self.threshold):
-                print("Found a local violation on the monitored resources - SCALE DOWN")
-                print("Found a local violation on the monitored resources - SCALE UP")
-                Messages.send_noresp("scale_down", v=self.v, u=self.u) #communication to cloud
-                self.vLast = self.v
+                if self.last_mode == "scale_down":
+                    print("Under the threshold but cannot scale down because not in cluster")
+                else:
+                    self.last_mode = "scale_down"
+                    print("Found a local violation on the monitored resources - SCALE DOWN")
+                    Messages.send_noresp("scale_down", v=self.v, u=self.u)
+                    self.vLast = self.v
+                self.last_mode = "scale_down"
             time.sleep(Config.MONITORING_TIMEFRAME)
