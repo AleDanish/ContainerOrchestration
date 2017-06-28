@@ -6,7 +6,7 @@ import psutil
 import time
 import Messages
 import Config
-import MQTTClient
+from MQTTClient import MQTTClient
 
 _disk=psutil.disk_usage("/").percent
 
@@ -59,8 +59,8 @@ class myThread_Monitoring(threading.Thread):
     def run(self):
         while True:
             _cpu, _mem, _disk = monitoring_resource()
-            #_cpu = 70.0
-            #_mem = 85.1
+            _cpu = 70.0
+            _mem = 85.1
             #_disk = 66.3
             if Config.DELTA_SHARED != 0:
                 self.delta = Config.DELTA_SHARED
@@ -92,6 +92,8 @@ class myThread_Monitoring(threading.Thread):
                 except KeyError:
                     self.delta = response['delta']
                     print("New estimation from coordinator - delta:" + str(self.delta))
+                except TypeError:
+                    print("No node available")
                 self.vLast = self.v
             elif functionValue < (-self.threshold):
                 print("Found a local violation on the monitored resources - SCALE DOWN")
