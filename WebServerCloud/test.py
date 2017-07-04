@@ -7,6 +7,7 @@ import Deploy
 import subprocess
 import ast
 import numpy as np
+import time
 
 #curl -d hostname=alessandro-VirtualBox -d mode=mobile_presence -d mac= http://10.101.101.119:8888 #192.168.56.101
 
@@ -55,6 +56,11 @@ def update_balancingSet(hostname_receiver, nodes, balancingSet):
     balancingSet.append([hostname_receiver, V, U])
     return balancingSet
 
+def write_log_file(data):
+    file= open('log.txt', 'a+')
+    file.write(data)
+    file.close()
+
 class MainHandler(tornado.web.RequestHandler):
     def post(self):
         arguments = self.request.arguments
@@ -62,6 +68,7 @@ class MainHandler(tornado.web.RequestHandler):
         hostname_request = arguments["hostname"][0].decode("utf-8")
         print("Arrived request from the hostname " + hostname_request + " with the mode " + mode)
         if mode =="init":
+            startInitialEstimationTime = time.time()
             try:
                 file_monitoring_setup= self.request.files['file'][0]['body'].decode("utf-8")
                 coeff, estimation = Monitoring.initialization_monitoring(file_monitoring_setup)
@@ -70,11 +77,23 @@ class MainHandler(tornado.web.RequestHandler):
                 self.write(json.dumps(response))
             except AttributeError:
                 print(Config.MODE[mode] + " Initialization request without dataset file")
+
+            timeInitialEstimation = time.time() - startInitialEstimationTime
+            print("Total estimation time " + str(timeInitialEstimation) + " s")
+            write_log_file("Total estimation time " + str(timeInitialEstimation) + " s \n")
+
         elif mode == "mobile_presence":
+            startMobilePresenceTime = time.time()
+
             mac_new_device = arguments["mac"][0].decode("utf-8") #Arduino MAC address
             Deploy.new_node(hostname_request, mac_new_device, mode)
 
+            timeMobilePresence = time.time() - startMobilePresenceTime
+            print("Total time for mobile presence " + str(timeMobilePresence) + " s")
+            write_log_file("Total time for mobile presence " + str(timeMobilePresence) + " s \n")
+
         elif mode == "scale_up":
+            startScaleUpTime = time.time()
             v0 = float(arguments["v0"][0].decode("utf-8"))
             v1 = float(arguments["v1"][0].decode("utf-8"))
             v2 = float(arguments["v2"][0].decode("utf-8"))
@@ -92,6 +111,8 @@ class MainHandler(tornado.web.RequestHandler):
             nodes={}
             balancingSet = []
             labels = Swarm_Management.get_node_labels(hostname_request)
+            print("LABELS:")
+            print(labels)
             for label in labels:
                 if label == hostname_request:
                     weigth = 1
@@ -146,9 +167,13 @@ class MainHandler(tornado.web.RequestHandler):
                         else:
                             ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
                             send_message_noresp(message, ip_receiver, element[1][0], element[1][1], element[1][2])
+            timeScaleUp = time.time() - startScaleUpTime
+            print("Total time to scale up the application " + str(timeScaleUp) + " s")
+            write_log_file("Total time to scale up the application " + str(timeScaleUp) + " s \n")
 
         elif mode == "scale_down":
             print("Scale down")
+            startScaleDownTime = time.time()
             v0 = float(arguments["v0"][0].decode("utf-8"))
             v1 = float(arguments["v1"][0].decode("utf-8"))
             v2 = float(arguments["v2"][0].decode("utf-8"))
@@ -180,6 +205,10 @@ class MainHandler(tornado.web.RequestHandler):
                     estimation = Monitoring.estimation(V, w, sumW)
                     ip_receiver = Config.MAP_HOSTNAME_IP[element[0]]
                     send_message_noresp("violation", ip_receiver, estimation[0], estimation[1], estimation[2])
+
+            timeScaleDown = time.time() - startScaleDownTime
+            print("Total time to scale down the application " + str(timeScaleDown) + " s")
+            write_log_file("Total time to scale down the application " + str(timeScaleDown) + " s \n")
 
     def get(self):
         print("Arrived request without arguments")

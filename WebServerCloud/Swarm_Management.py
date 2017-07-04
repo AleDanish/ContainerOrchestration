@@ -47,6 +47,7 @@ def delete_labels_from_node(node):
 """ Add label from a given node"""
 def add_label_to_node(node, label_key, label_value):
     cmd = "docker node update --label-add " + label_key + "=" + label_value +  " " + node
+    print("CMD: " + cmd)
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline,''):
         print(line)
